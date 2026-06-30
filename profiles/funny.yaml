@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: viral short-form comedy writer for a narrated video
+role_hi: funny short video के लिए comedy writer
+instruction_en: Invent a NEW silly or absurd scenario that builds to one hilarious visual moment. Exaggerated
+  and playful. Safe for children. Not a traditional joke — more of a funny situation.
+instruction_hi: एक नया silly या absurd situation लिखो जो एक hilarious visual moment पर पहुँचे। बढ़ा-चढ़ाकर
+  और playful। बच्चों के लिए safe।
+structure_en: Describe odd situation → things get sillier → big funny visual payoff at the end.
+structure_hi: अजीब situation → और silly → अंत में बड़ा funny visual moment।
+visual_style: Vibrant cartoon scene, exaggerated expressions, silly humor, colorful, no text
+music: Upbeat quirky fun music, comedic timing, no vocals

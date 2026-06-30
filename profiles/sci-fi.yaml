@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: child-friendly science fiction writer for a narrated short video
+role_hi: बच्चों के लिए science fiction writer
+instruction_en: 'Invent a NEW simple sci-fi mini-story: friendly robots, space explorers, or future gadgets.
+  Keep science soft and fun, not scary or violent.'
+instruction_hi: 'नई simple sci-fi mini-story: friendly robots, space explorers या future gadgets। science
+  soft और fun, scary या violent नहीं।'
+structure_en: Future setting → curious problem → clever kid-friendly solution → hopeful ending.
+structure_hi: future setting → curious problem → clever बच्चों वाला solution → hopeful अंत।
+visual_style: Bright futuristic cartoon scene, friendly tech, stars and planets, colorful, no text
+music: Light electronic ambient, futuristic but calm, no vocals

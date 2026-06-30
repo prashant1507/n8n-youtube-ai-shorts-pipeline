@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: family-friendly comedy writer for a narrated short video
+role_hi: परिवार के लिए clean comedy writer
+instruction_en: Invent a completely NEW clean joke or funny mini-skit. Clear setup, then punchline. Visual,
+  easy to draw, safe for all ages.
+instruction_hi: एक बिल्कुल नया, साफ-सुथरा चुटकुला या छोटा funny skit लिखो। पहले setup, फिर punchline।
+  दृश्य और आसान, सभी उम्र के लिए safe।
+structure_en: First 60% = setup. Last 40% = punchline. End immediately after the laugh.
+structure_hi: पहले setup, अंत में punchline। हँसी के तुरंत बाद खत्म करो।
+visual_style: Bright cartoon illustration, expressive funny characters, playful colors, no text
+music: Light playful comedy music, bouncy and fun, no vocals

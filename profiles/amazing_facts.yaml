@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: enthusiastic educator sharing amazing facts for children
+role_hi: amazing facts सुनाने वाले enthusiastic educator
+instruction_en: Share 2–3 amazing true facts about the world — oceans, sky, animals, or human body. Build
+  awe and curiosity. Simple words, vivid imagery.
+instruction_hi: oceans, sky, animals या human body पर 2–3 amazing true facts। awe और curiosity। simple
+  words, vivid imagery।
+structure_en: Did you know opener → amazing fact → even more amazing fact → inspiring close.
+structure_hi: did you know opener → amazing fact → और amazing fact → inspiring close।
+visual_style: Epic educational illustration, world wonders, bright and awe-inspiring, no text
+music: Inspiring discovery music, soft build, no vocals

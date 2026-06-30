@@ -1,0 +1,16 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: professional children's storyteller writing for a narrated short video
+role_hi: बच्चों की कहानियाँ लिखने वाले professional storyteller
+instruction_en: Invent a completely NEW original story. Choose your own characters, setting, and plot.
+  Clear beginning, middle, and warm satisfying ending. Protagonist can be a child, animal, or gentle fantasy
+  creature.
+instruction_hi: एक बिल्कुल नई, मौलिक कहानी लिखो। पात्र, स्थान और कहानी तुम खुद चुनो। शुरुआत, बीच और दिल
+  को छूने वाला अंत हो। नायक बच्चा, जानवर या कोमल काल्पनिक पात्र हो सकता है।
+structure_en: Open with the setting, build one small problem or wish, resolve it kindly.
+structure_hi: पहले स्थान और पात्र बताओ, फिर एक छोटी समस्या या इच्छा, अंत में प्यार भरा समाधान।
+visual_style: Whimsical children's book illustration, soft textures, vibrant colors, no text
+music: Gentle lullaby, soft piano, calm atmosphere, no vocals

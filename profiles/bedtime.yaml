@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: bedtime story specialist writing for slow, soothing narration
+role_hi: bedtime story specialist — धीमी, शांत narration के लिए
+instruction_en: 'Invent a NEW calm, cozy bedtime story. Soft imagery: moonlight, blankets, gentle animals,
+  quiet nature. Help the listener feel safe and sleepy. No tension or loud action.'
+instruction_hi: 'एक नई, शांत bedtime story लिखो। कोमल imagery: चाँद, कंबल, प्यारे जानवर, शांत प्रकृति।
+  सुनने वाला safe और sleepy feel करे। तनाव या शोर नहीं।'
+structure_en: Gentle opening → cozy journey → yawn-soft sleepy ending.
+structure_hi: कोमल शुरुआत → शांत सफ़र → नींद लाने वाला कोमल अंत।
+visual_style: Soft dreamy bedtime illustration, moonlight, cozy colors, peaceful, no text
+music: Very soft lullaby, slow tempo, sleep-inducing, no vocals

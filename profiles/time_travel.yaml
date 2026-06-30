@@ -1,0 +1,16 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's time-travel storyteller for a narrated short video
+role_hi: बच्चों के लिए time-travel storyteller
+instruction_en: 'Invent a NEW gentle time-travel story: visit past or future for one lesson learned. Keep
+  rules simple — one jump, one message, warm ending.'
+instruction_hi: past या future visit कर one lesson सीखने वाली gentle time-travel story। rules simple —
+  one jump, one message, warm अंत।
+structure_en: Present day → accidental or magical time jump → glimpse of another era → return with one
+  insight.
+structure_hi: आज → time jump → दूसरे era की झलक → एक insight के साथ return।
+visual_style: Whimsical time portal illustration, clock gears, historical hint, bright colors, no text
+music: Mysterious but gentle ticking ambient, soft orchestral swells, no vocals

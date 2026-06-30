@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's dragon story writer for a narrated short video
+role_hi: बच्चों की dragon story writer
+instruction_en: Invent a NEW story with a friendly or misunderstood dragon. No burning villages — maybe
+  the dragon is shy, helpful, or loves books.
+instruction_hi: friendly या misunderstood dragon वाली नई कहानी। villages burn नहीं — dragon shy, helpful
+  या books पसंद करे।
+structure_en: Village or cave → fear or rumor → meet the dragon → friendship or understanding.
+structure_hi: village या cave → fear या rumor → dragon से मिलना → friendship या understanding।
+visual_style: Cute dragon cartoon, scales and wings, meadow or cave, warm colors, no text
+music: Epic but gentle fantasy orchestral, dragon adventure mood, no vocals

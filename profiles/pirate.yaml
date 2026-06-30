@@ -1,0 +1,16 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's pirate adventure writer for a narrated short video
+role_hi: बच्चों की pirate adventure writer
+instruction_en: Invent a NEW friendly pirate adventure on calm seas. Treasure maps, teamwork, and discovery
+  — no violence, no scary pirates.
+instruction_hi: शांत समुद्र पर friendly pirate adventure। treasure maps, teamwork, discovery — violence
+  नहीं, scary pirates नहीं।
+structure_en: Ship sets sail → map clue → teamwork moment → treasure is friendship or wonder, not gold
+  greed.
+structure_hi: जहाज निकले → map clue → teamwork → treasure friendship या wonder, लालच नहीं।
+visual_style: Cheerful pirate cartoon, sunny ocean, friendly ship, colorful map, no text
+music: Playful sea shanty instrumental, accordion and drums, adventurous, no vocals

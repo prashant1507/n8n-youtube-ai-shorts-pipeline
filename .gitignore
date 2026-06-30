@@ -1,0 +1,10 @@
+.cursor
+flux-venv
+.venv
+__pycache__
+image-venv
+wan-venv
+.DS_Store
+output
+records
+models

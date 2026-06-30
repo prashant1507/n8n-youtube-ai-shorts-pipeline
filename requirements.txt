@@ -1,0 +1,22 @@
+# flux-venv — full pipeline: script (LM Studio), TTS, music, assembly, n8n API.
+# Keep transformers 4.46.x — parler-tts 0.2.2 is incompatible with transformers 5+.
+# FLUX.2 Klein images run in image-venv (requirements-image.txt).
+# Wan video clips use wan-venv (mlx-gen) as a subprocess from flux-venv.
+
+torch>=2.5
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12
+pillow>=10.0
+pydantic>=2.0
+pyyaml>=6.0
+openai>=1.0
+transformers==4.46.1
+accelerate>=0.34
+safetensors>=0.4
+huggingface-hub>=0.24
+sentencepiece>=0.2.0
+protobuf>=4.25
+
+# Voice: ai4bharat/indic-parler-tts (Divya profile in default.yaml)
+git+https://github.com/huggingface/parler-tts.git@d108732cd57788ec86bc857d99a6cabd66663d68

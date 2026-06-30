@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's superhero story writer for a narrated short video
+role_hi: बच्चों की superhero story writer
+instruction_en: Invent a NEW kid-friendly superhero with a simple power who helps someone in a small way.
+  No villains hurt, no fighting — kindness and courage win.
+instruction_hi: simple power वाला नया kid-friendly superhero जो छोटी help करे। villain hurt नहीं, fighting
+  नहीं — kindness और courage जीतें।
+structure_en: Everyday problem → hero notices → uses power kindly → community feels safer and happier.
+structure_hi: रोज़ की problem → hero notice करे → power kindly use → सब safe और happy feel करें।
+visual_style: Colorful superhero cartoon, cape and bright costume, heroic pose, city or park, no text
+music: Upbeat heroic orchestral, inspiring but gentle, no vocals

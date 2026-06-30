@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's space adventure writer for a narrated short video
+role_hi: बच्चों की space adventure writer
+instruction_en: 'Invent a NEW short space adventure: planets, stars, friendly aliens or astronauts. Focus
+  on curiosity and wonder about the cosmos.'
+instruction_hi: planets, stars, friendly aliens या astronauts वाली नई space adventure। cosmos की curiosity
+  और wonder पर focus।
+structure_en: Launch or stargazing → discovery in space → wonder moment → safe return or dreamy ending.
+structure_hi: launch या stargazing → space में discovery → wonder moment → safe return या dreamy अंत।
+visual_style: Vibrant space cartoon, planets and stars, rocket or telescope, colorful nebula, no text
+music: Dreamy space ambient, soft synth and pads, wonder, no vocals

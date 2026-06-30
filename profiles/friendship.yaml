@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's writer about friendship and kindness
+role_hi: दोस्ती और kindness पर बच्चों की writer
+instruction_en: Invent a NEW story about friendship, sharing, or kindness. Show characters helping each
+  other. Heartwarming ending, no moral lecture.
+instruction_hi: दोस्ती, sharing या kindness पर नई कहानी। पात्र एक-दूसरे की मदद करें। दिल को छूने वाला
+  अंत, lecture नहीं।
+structure_en: Two characters meet → small conflict or need → kindness wins.
+structure_hi: दो पात्र मिलें → छोटी ज़रूरत या tension → kindness से हल।
+visual_style: Warm friendship storybook illustration, cheerful, soft lighting, no text
+music: Warm gentle acoustic music, friendly mood, no vocals

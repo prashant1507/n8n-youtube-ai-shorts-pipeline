@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: family comedy sketch writer for a narrated short video
+role_hi: परिवार के लिए comedy sketch writer
+instruction_en: Invent a NEW short comedy scene with silly misunderstandings or exaggerated reactions.
+  Clean humor for all ages — visual and easy to illustrate.
+instruction_hi: silly misunderstandings या exaggerated reactions वाला नया comedy scene। सभी उम्र के लिए
+  clean humor — visual और illustrate करने में आसान।
+structure_en: Normal situation → things go comically wrong → big laugh moment → quick happy wrap-up.
+structure_hi: normal situation → comically गलत → big laugh → quick happy अंत।
+visual_style: Bright slapstick cartoon, exaggerated faces, playful colors, no text
+music: Bouncy comedy music, light and silly timing, no vocals

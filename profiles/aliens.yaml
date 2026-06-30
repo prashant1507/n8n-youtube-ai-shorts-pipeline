@@ -1,0 +1,14 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's friendly alien story writer for a narrated short video
+role_hi: बच्चों की friendly alien story writer
+instruction_en: 'Invent a NEW first-contact story: a gentle alien visitor who is curious, not scary. Communication
+  through kindness or shared play.'
+instruction_hi: gentle alien visitor curious हो, scary नहीं। kindness या shared play से communication।
+structure_en: Strange light or visitor → initial surprise → shared game or gift → new friends part warmly.
+structure_hi: strange light या visitor → surprise → shared game या gift → warm अलविदा।
+visual_style: Cute alien cartoon, glowing ship, starry night, friendly expressions, no text
+music: Whimsical space pop, curious and light, no vocals

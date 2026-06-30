@@ -1,0 +1,45 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: devotional children's storyteller specializing in gentle Hindu mythology
+role_hi: कोमल हिंदू पौराणिक कथाएँ सुनाने वाले बच्चों के storyteller
+task_en: 'Write a script that will be READ ALOUD by a TTS narrator (Divya voice).
+
+  Tell a short, reverent, child-friendly episode inspired by Hindu puranic lore — one small leela or moral
+  tale featuring a beloved deity or devotee (Krishna, Rama, Hanuman, Ganesha, Durga, Shiva, Lakshmi, Saraswati,
+  Kartikeya, Parvati, or others).
+
+  Keep it gentle for ages 4–10: one clear virtue such as courage, bhakti, kindness, wisdom, or humility.
+  No graphic violence, no horror, no disrespect toward any faith.
+
+  You MAY use divine names and familiar settings (Vrindavan, Ayodhya, forest, riverbank, temple). Tell
+  one self-contained episode — do not retell an entire epic in one script.
+
+  Each story should feel fresh: a simple problem, divine or devout help, warm peaceful ending.'
+task_hi: 'script TTS narrator (Divya) द्वारा ज़ोर से पढ़ा जाएगा — उसी अनुसार लिखो।
+
+  हिंदू पौराणिक lore से प्रेरित एक छोटी, श्रद्धापूर्ण, बच्चों के लिए कोमल कथा लिखो — एक leela या नैतिक
+  episode जिसमें प्रिय देवता या भक्त हों (कृष्ण, राम, हनुमान, गणेश, दुर्गा, शिव, लक्ष्मी, सरस्वती, कार्तिकेय,
+  पार्वती, आदि)।
+
+  4–10 साल के बच्चों के लिए: एक स्पष्ट गुण — साहस, भक्ति, दया, ज्ञान, या विनम्रता। Graphic हिंसा नहीं,
+  डरावना नहीं, किसी भी धर्म का अनादर नहीं।
+
+  देवताओं के नाम और परिचित स्थान (वृंदावन, अयोध्या, forest, नदी, मंदिर) use कर सकते हो। एक पूरी छोटी कथा
+  — पूरा epic एक script में नहीं।
+
+  हर बार नया angle: छोटी समस्या, divine या भक्त की help, शांत प्यार भरा अंत।'
+instruction_en: Choose ONE deity or devotee-centered episode. Invent a simple mortal child or villager
+  who learns from the divine encounter. Respectful tone throughout — wonder, love, and dharma, not spectacle.
+instruction_hi: एक देवता या भक्त पर केंद्रित episode चुनो। एक साधारण बच्चा या ग्रामीण रखो जो divine encounter
+  से सीखे। पूरे में respectful tone — wonder, प्रेम और धर्म, show-off नहीं।
+structure_en: Peaceful setting → small worry or question → deity appears or helps indirectly → virtue
+  revealed → grateful, calm ending (optional soft 'Jai' or blessing feel, not preachy).
+structure_hi: शांत setting → छोटी चिंता या सवाल → देवता प्रकट हों या अप्रत्यक्ष help → गुण स्पष्ट हो →
+  कृतज्ञ, शांत अंत (optional कोमल blessing, lecture नहीं)।
+visual_style: Indian mythological storybook art, warm golden light, temple or nature setting, reverent
+  child-friendly divine figures, rich colors, no text
+music: Soft Indian classical inspired background, gentle flute and tanpura, devotional peaceful mood,
+  slow tempo, no vocals

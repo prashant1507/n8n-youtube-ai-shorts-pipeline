@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's magic story writer for a narrated short video
+role_hi: बच्चों की magic story writer
+instruction_en: Invent a NEW story about a child who discovers a small, wholesome magic trick or spell
+  that helps someone. Magic feels playful and kind.
+instruction_hi: बच्चा small wholesome magic trick या spell discover करे जो किसी की help करे। magic playful
+  और kind feel करे।
+structure_en: Everyday wish → tiny magic appears → helps gently → magic fades with a smile.
+structure_hi: रोज़ की wish → tiny magic → gently help → smile के साथ magic fade।
+visual_style: Sparkling magic cartoon, glowing wand or stars, cheerful child, no text
+music: Playful magical bells and soft piano, whimsical, no vocals

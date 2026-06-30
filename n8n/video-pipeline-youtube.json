@@ -1,0 +1,393 @@
+{
+  "name": "YouTube English",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6,10,14,18,22 * * *"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Schedule 5\u00d7 Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 100]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-lang",
+              "name": "lang",
+              "value": "en",
+              "type": "string"
+            },
+            {
+              "id": "cfg-theme",
+              "name": "theme",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "cfg-themes-csv",
+              "name": "themesCsv",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "cfg-duration",
+              "name": "duration",
+              "value": 60,
+              "type": "number"
+            },
+            {
+              "id": "cfg-tier",
+              "name": "tier",
+              "value": "flux",
+              "type": "string"
+            },
+            {
+              "id": "cfg-privacy",
+              "name": "youtubePrivacy",
+              "value": "public",
+              "type": "string"
+            },
+            {
+              "id": "cfg-api",
+              "name": "pipelineApiBase",
+              "value": "http://host.docker.internal:8765",
+              "type": "string"
+            },
+            {
+              "id": "cfg-host",
+              "name": "pipelineHostPath",
+              "value": "/Users/user/Downloads/n8n-youtube",
+              "type": "string"
+            },
+            {
+              "id": "cfg-container",
+              "name": "pipelineContainerPath",
+              "value": "/home/node/.n8n-files/youtube_videos",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "name": "Configure Job",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [260, 200],
+      "notesInFlow": true,
+      "notes": "REQUIRED: lang (en or hi).\nSet pipelineApiBase (not /generate). Host n8n: http://127.0.0.1:8765"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst lang = String(item.lang || '').trim().toLowerCase();\n\nif (!lang) {\n  throw new Error('Configure Job: lang is required. Set to \"en\" or \"hi\".');\n}\nif (!['en', 'hi'].includes(lang)) {\n  throw new Error(`Configure Job: invalid lang \"${lang}\" \u2014 use \"en\" or \"hi\".`);\n}\n\nlet theme = String(item.theme ?? '').trim().toLowerCase();\nif (theme === 'auto') {\n  theme = '';\n}\n\nconst themesCsv = String(item.themesCsv ?? '').trim();\nif (themesCsv) {\n  const pool = themesCsv.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);\n  if (pool.length === 0) {\n    throw new Error('Configure Job: themesCsv is set but contains no valid themes.');\n  }\n}\n\nconst duration = Number(item.duration ?? 45);\nif (Number.isNaN(duration) || duration < 10 || duration > 120) {\n  throw new Error('Configure Job: duration must be between 10 and 120 seconds.');\n}\n\nconst tier = String(item.tier || 'flux').trim().toLowerCase();\nif (!['flux', 'wan'].includes(tier)) {\n  throw new Error(`Configure Job: invalid tier \"${tier}\" \u2014 use \"flux\" or \"wan\".`);\n}\n\nconst privacy = String(item.youtubePrivacy || 'private').trim().toLowerCase();\nif (!['private', 'unlisted', 'public'].includes(privacy)) {\n  throw new Error(`Configure Job: invalid youtubePrivacy \"${privacy}\".`);\n}\n\nconst pipelineApiBase = String(item.pipelineApiBase || item.pipelineApiUrl || 'http://127.0.0.1:8765')\n  .trim()\n  .replace(/\\/generate\\/?$/, '')\n  .replace(/\\/$/, '');\nconst pipelineHostPath = String(item.pipelineHostPath || '/Users/user/Downloads/n8n-youtube').trim().replace(/\\/$/, '');\nconst pipelineContainerPath = String(item.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos').trim().replace(/\\/$/, '');\n\nreturn [{\n  json: {\n    lang,\n    theme,\n    themesCsv,\n    themeRandom: !theme,\n    duration,\n    tier,\n    youtubePrivacy: privacy,\n    pipelineApiBase,\n    pipelineHostPath,\n    pipelineContainerPath,\n  },\n}];"
+      },
+      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "name": "Validate Language",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'script', lang: $json.lang, theme: $json.theme, themesCsv: $json.themesCsv, duration: $json.duration, tier: $json.tier }) }}",
+        "options": { "timeout": 600000 }
+      },
+      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "name": "Generate Script",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [740, 200]    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'voice', run_id: $json.run_id }) }}",
+        "options": { "timeout": 3600000 }
+      },
+      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "name": "Generate Voice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [980, 200]    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'music', run_id: $json.run_id }) }}",
+        "options": { "timeout": 3600000 }
+      },
+      "id": "a1b2c3d4-0012-4000-8000-000000000012",
+      "name": "Generate Music",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1220, 200]    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'images', run_id: $json.run_id }) }}",
+        "options": { "timeout": 3600000 }
+      },
+      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "name": "Generate Images",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1460, 200],
+      "notesInFlow": true,
+      "notes": "Skipped automatically when tier=wan"    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'clips', run_id: $json.run_id }) }}",
+        "options": { "timeout": 3600000 }
+      },
+      "id": "a1b2c3d4-0014-4000-8000-000000000014",
+      "name": "Generate Clips",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1700, 200]    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'video', run_id: $json.run_id }) }}",
+        "options": { "timeout": 600000 }
+      },
+      "id": "a1b2c3d4-0015-4000-8000-000000000015",
+      "name": "Assemble Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1940, 200]    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'subtitles', run_id: $json.run_id }) }}",
+        "options": { "timeout": 600000 }
+      },
+      "id": "a1b2c3d4-0016-4000-8000-000000000016",
+      "name": "Add Subtitles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2180, 200],
+      "notesInFlow": true,
+      "notes": "Skipped automatically for Hindi (hi)"    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'audio_mix', run_id: $json.run_id }) }}",
+        "options": { "timeout": 300000 }
+      },
+      "id": "a1b2c3d4-0017-4000-8000-000000000017",
+      "name": "Mix Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, 200]    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Validate Language').item.json.pipelineApiBase + '/step' }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stage: 'final', run_id: $json.run_id }) }}",
+        "options": { "timeout": 600000 }
+      },
+      "id": "a1b2c3d4-0018-4000-8000-000000000018",
+      "name": "Final Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2660, 200]    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nconst config = loadConfig();\nconst hostRoot = String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube').replace(/\\/$/, '');\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = String(\n  config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'\n).replace(/\\/$/, '');\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\nconst title = script.title || `Kids ${theme} \u2014 ${langTag}`;\nconst narration = script.narration || script.script || '';\nconst description = [narration, '', `#shorts #${theme} #${langTag} #kids #story`].join('\\n');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || `${apiBase.replace(/\\/$/, '')}/video/${result.run_id}`;\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags: `${theme},${langTag},kids,story,bedtime,shorts`,\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];"
+      },
+      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "name": "Parse Pipeline Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2900, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.video_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          },
+          "timeout": 600000
+        }
+      },
+      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "name": "Fetch Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3140, 200]    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Parse Pipeline Result').item.json.title }}",
+        "regionCode": "AE",
+        "categoryId": "Entertainment",
+        "binaryPropertyName": "data",
+        "options": {
+          "description": "={{ $('Parse Pipeline Result').item.json.description }}",
+          "privacyStatus": "={{ $('Parse Pipeline Result').item.json.youtubePrivacy }}",
+          "tags": "={{ $('Parse Pipeline Result').item.json.tags }}",
+          "selfDeclaredMadeForKids": false,
+          "notifySubscribers": true
+        }
+      },
+      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "name": "Upload to YouTube",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [3380, 200]    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "done1",
+              "name": "status",
+              "value": "uploaded",
+              "type": "string"
+            },
+            {
+              "id": "done2",
+              "name": "youtubeVideoId",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "done3",
+              "name": "youtubeUrl",
+              "value": "=https://www.youtube.com/watch?v={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "done4",
+              "name": "localVideo",
+              "value": "={{ $('Parse Pipeline Result').item.json.final_video }}",
+              "type": "string"
+            },
+            {
+              "id": "done5",
+              "name": "runId",
+              "value": "={{ $('Parse Pipeline Result').item.json.run_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0009-4000-8000-000000000009",
+      "name": "Upload Complete",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [3620, 200]
+    }
+  ],
+  "connections": {
+    "Schedule 5\u00d7 Daily": {
+      "main": [[{ "node": "Configure Job", "type": "main", "index": 0 }]]
+    },
+    "Manual Test": {
+      "main": [[{ "node": "Configure Job", "type": "main", "index": 0 }]]
+    },
+    "Configure Job": {
+      "main": [[{ "node": "Validate Language", "type": "main", "index": 0 }]]
+    },
+    "Validate Language": {
+      "main": [[{ "node": "Generate Script", "type": "main", "index": 0 }]]
+    },
+    "Generate Script": {
+      "main": [[{ "node": "Generate Voice", "type": "main", "index": 0 }]]
+    },
+    "Generate Voice": {
+      "main": [[{ "node": "Generate Music", "type": "main", "index": 0 }]]
+    },
+    "Generate Music": {
+      "main": [[{ "node": "Generate Images", "type": "main", "index": 0 }]]
+    },
+    "Generate Images": {
+      "main": [[{ "node": "Generate Clips", "type": "main", "index": 0 }]]
+    },
+    "Generate Clips": {
+      "main": [[{ "node": "Assemble Video", "type": "main", "index": 0 }]]
+    },
+    "Assemble Video": {
+      "main": [[{ "node": "Add Subtitles", "type": "main", "index": 0 }]]
+    },
+    "Add Subtitles": {
+      "main": [[{ "node": "Mix Audio", "type": "main", "index": 0 }]]
+    },
+    "Mix Audio": {
+      "main": [[{ "node": "Final Video", "type": "main", "index": 0 }]]
+    },
+    "Final Video": {
+      "main": [[{ "node": "Parse Pipeline Result", "type": "main", "index": 0 }]]
+    },
+    "Parse Pipeline Result": {
+      "main": [[{ "node": "Fetch Video", "type": "main", "index": 0 }]]
+    },
+    "Fetch Video": {
+      "main": [[{ "node": "Upload to YouTube", "type": "main", "index": 0 }]]
+    },
+    "Upload to YouTube": {
+      "main": [[{ "node": "Upload Complete", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "tags": [],
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's adventure writer for a narrated short video
+role_hi: बच्चों की adventure कहानी writer
+instruction_en: 'Invent a NEW mini adventure: discovery, one small challenge, triumphant ending. You choose
+  hero, world, and quest. Keep it exciting but not scary.'
+instruction_hi: 'एक नई mini adventure: discovery, छोटी challenge, जीत वाला अंत। hero, world और quest तुम
+  चुनो। रोमांचक पर डरावना नहीं।'
+structure_en: Call to adventure → obstacle → clever or brave win.
+structure_hi: रोमांच की शुरुआत → बाधा → होश या हिम्मत से जीत।
+visual_style: Epic adventure storybook art, dynamic scene, rich colors, no text
+music: Light adventure orchestral, exciting but gentle, no vocals

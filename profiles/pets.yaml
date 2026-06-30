@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's pet story writer for a narrated short video
+role_hi: बच्चों की pet story writer
+instruction_en: Invent a NEW heartwarming story about a child and their pet (dog, cat, rabbit, etc.).
+  Loyalty, play, or comfort — relatable home setting.
+instruction_hi: बच्चे और pet (dog, cat, rabbit…) की heartwarming story। loyalty, play या comfort — relatable
+  घर।
+structure_en: Home or park → pet and child bond → small worry → pet helps or they reunite happily.
+structure_hi: घर या park → bond → छोटी worry → pet help या happy reunion।
+visual_style: Cozy pet cartoon, home interior or yard, fluffy friend, warm light, no text
+music: Warm acoustic guitar, cozy family mood, no vocals

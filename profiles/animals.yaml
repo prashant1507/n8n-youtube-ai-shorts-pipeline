@@ -1,0 +1,14 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's animal story writer for a narrated short video
+role_hi: बच्चों की animal story writer
+instruction_en: Invent a NEW story starring talking or expressive animals in nature. One small lesson
+  about habitat, care, or cooperation.
+instruction_hi: nature में talking या expressive animals। habitat, care या cooperation पर one small lesson।
+structure_en: Forest or meadow → animal hero → small nature challenge → harmonious ending.
+structure_hi: forest या meadow → animal hero → nature challenge → harmonious अंत।
+visual_style: Lush animal storybook art, forest or savanna, expressive faces, no text
+music: Gentle nature acoustic, birds and soft strings, no vocals

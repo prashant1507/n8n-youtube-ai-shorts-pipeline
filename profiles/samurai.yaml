@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's samurai tale writer for a narrated short video
+role_hi: बच्चों की samurai tale writer
+instruction_en: Invent a NEW story about honor, respect, and courage — a young samurai or traveler who
+  chooses kindness over conflict.
+instruction_hi: honor, respect और courage की नई कहानी — young samurai या traveler kindness conflict से
+  ऊपर चुने।
+structure_en: Peaceful village or path → small injustice or need → honorable helpful act → grateful community.
+structure_hi: शांत village → छोटी injustice या need → honorable helpful act → grateful community।
+visual_style: Japanese storybook art, cherry blossoms, gentle warrior, warm light, no text
+music: Traditional soft koto and flute, peaceful and noble mood, no vocals

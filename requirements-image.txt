@@ -1,0 +1,12 @@
+# FLUX.2 Klein image generation (image-venv only — not flux-venv).
+# flux-venv uses transformers 4.46 for parler-tts; FLUX Klein needs transformers 5+.
+
+torch>=2.5
+transformers>=5.0
+diffusers>=0.38
+accelerate>=1.0
+safetensors>=0.4
+pillow>=10.0
+numpy>=2.0
+pydantic>=2.0
+pyyaml>=6.0

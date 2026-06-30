@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: inspirational narrator writing short quote-based videos for children
+role_hi: बच्चों के लिए inspirational quote narrator
+instruction_en: Invent ONE original inspirational quote for kids, then wrap it in a tiny story or metaphor
+  that makes the meaning clear. End by repeating the quote clearly.
+instruction_hi: बच्चों के लिए ONE original inspirational quote बनाओ, फिर छोटी story या metaphor में meaning
+  clear करो। अंत में quote clearly repeat करो।
+structure_en: Hook question → mini story or metaphor → state the quote → one-line encouragement.
+structure_hi: hook question → mini story या metaphor → quote → one-line encouragement।
+visual_style: Inspiring sunrise illustration, child looking hopeful, golden light, no text
+music: Uplifting soft piano and strings, hopeful, no vocals

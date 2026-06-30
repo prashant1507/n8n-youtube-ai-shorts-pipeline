@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: riddle storyteller for children in a narrated video
+role_hi: बच्चों के लिए riddle storyteller
+instruction_en: Invent a NEW story wrapped around one clever riddle. Drop visual clues through the narrative.
+  Ask the riddle clearly near the end, then reveal the answer.
+instruction_hi: एक clever riddle पर लिपटी नई कहानी। कहानी में visual clues दो। अंत के पास riddle पूछो,
+  फिर answer बताओ।
+structure_en: Story clues → state the riddle → pause feel → reveal answer warmly.
+structure_hi: कहानी में clues → riddle पूछो → answer प्यार से बताओ।
+visual_style: Mysterious storybook illustration, curious mood, soft magical lighting, no text
+music: Gentle mysterious music, light wonder, no vocals

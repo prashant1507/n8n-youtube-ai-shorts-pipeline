@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's dinosaur story writer for a narrated short video
+role_hi: बच्चों की dinosaur story writer
+instruction_en: Invent a NEW story with friendly dinosaurs in a prehistoric world. Discovery, play, or
+  helping a dino friend — educational but fun.
+instruction_hi: prehistoric world में friendly dinosaurs। discovery, play या dino friend की help — educational
+  पर fun।
+structure_en: Prehistoric setting → meet a dino → small adventure → safe sunset ending.
+structure_hi: prehistoric setting → dino meet → small adventure → safe sunset अंत।
+visual_style: Colorful dinosaur cartoon, jungle and volcanoes soft in background, no text
+music: Playful prehistoric adventure music, drums and flute, no vocals

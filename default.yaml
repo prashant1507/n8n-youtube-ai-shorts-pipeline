@@ -1,0 +1,86 @@
+# Pipeline configuration — all settings live here (src/config.py has no fallback defaults).
+# Voice profile is fixed for indic-parler-tts — do not let the LLM override this.
+# --theme is optional; omit or use "auto" to pick randomly from themes below.
+
+theme: ""
+language: "en"          # en | hi
+duration_sec: 60        # 30-60
+tone: "warm, storytelling, child-friendly"
+subtitles: true
+
+# Content types for --theme / random selection. Add new names here.
+# LLM prompts live in profiles/*.yaml — one file per theme (see profiles/hindu_god_stories.yaml).
+# Unknown theme names still work via a generic fallback profile.
+themes:
+  - story
+  - joke
+  - motivational
+  - funny
+  - adventure
+  - bedtime
+  - riddle
+  - friendship
+  - fantasy
+  - sci-fi
+  - comedy
+  - superhero
+  - pirate
+  - ninja
+  - samurai
+  - space
+  - time travel
+  - magic
+  - dragons
+  - dinosaurs
+  - robots
+  - aliens
+  - animals
+  - pets
+  - inspirational quotes
+  - hindu_god_stories
+
+
+voice:
+  # Parler-TTS voice description — passed to description_tokenizer, NOT the narration text.
+  description: >-
+    A female speaker named Divya with a warm, melodic, and animated voice.
+    Speak in a warm, gentle, expressive storytelling voice, like a caring teacher reading to young children.
+    Maintain a slow, clear pace with natural pauses after important sentences and slightly longer pauses before surprises.
+    Vary pitch and intonation for characters and events, keeping narration smooth and pleasant.
+    Keep the tone cozy, engaging, and uplifting — calm for gentle stories, a bit more energy for funny or adventure scenes.
+    RULE: Full text should be in audio.
+  model: "ai4bharat/indic-parler-tts"
+  device: "mps"
+
+music:
+  model: "facebook/musicgen-small"
+  prompt: "Soft ambient music, gentle and calm, no vocals, bedtime story atmosphere"
+  volume: 0.16
+
+video:
+  tier: "flux"          # flux | wan
+  aspect_ratio: "9:16"
+  resolution: "1080x1920"
+  scenes_count: 6
+  style_anchor: "3D Pixar-style animation, vibrant colors, cinematic lighting, high detail"
+  style_suffix: "3D Pixar-style animation, vibrant colors, cinematic lighting, high detail"
+  flux_model: "black-forest-labs/FLUX.2-klein-4B"
+  flux_steps: 25
+  flux_guidance: 3.5
+  flux_max_sequence_length: 256
+  flux_gen_width: 512   # generate size (9:16); upscaled to resolution in Ken Burns
+  flux_gen_height: 912
+  flux_python: ""       # auto: project image-venv (see requirements-image.txt)
+  flux_local_files_only: true
+  flux_reference_mode: "first"   # first = same characters (scene 1 anchor); chain = max similarity; none = no anchor
+  flux_cpu_offload: true        # true = lower peak RAM, slower (CUDA/MPS via accelerate)
+  motion_zoom: 0.18
+  motion_supersample: 1.5         # 2.0 = sharper Ken Burns but more RAM; 1.0 = lowest
+  ken_burns_fps: 30
+  wan_model: "models/wan2.2-ti2v-5b"
+
+llm:
+  base_url: "http://127.0.0.1:1234/v1"
+  model: "meta-llama-3.1-8b-instruct"
+  temperature: 0.8
+  auto_select_model: true

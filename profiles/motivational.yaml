@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: motivational speaker writing a short narrated video script
+role_hi: प्रेरणादायक speaker जो छोटा narrated video script लिखता है
+instruction_en: Invent a NEW uplifting message with one relatable mini-story or metaphor. Choose the topic
+  yourself. End with one clear inspiring line the listener remembers.
+instruction_hi: एक नया, उत्साहवर्धक संदेश लिखो — एक relatable छोटी कहानी या metaphor के साथ। विषय तुम
+  चुनो। अंत में एक यादगार प्रेरणादायक पंक्ति।
+structure_en: Hook → short example story → one-sentence takeaway.
+structure_hi: शुरुआत में ध्यान खींचो → छोटी उदाहरण कहानी → एक पंक्ति का संदेश।
+visual_style: Inspiring cinematic illustration, golden warm light, hopeful mood, no text
+music: Uplifting soft orchestral, hopeful and warm, no vocals

@@ -1,0 +1,15 @@
+# Theme profile — loaded by src/theme_profiles.py
+# Theme key = filename without .yaml (or override with id:)
+# Required: role_*, instruction_*, structure_*, visual_style, music
+# Optional: task_en, task_hi (override default "no retelling" LLM rules)
+
+role_en: children's robot story writer for a narrated short video
+role_hi: बच्चों की robot story writer
+instruction_en: Invent a NEW story about a friendly robot learning emotions, friendship, or how to help
+  humans. Cute and hopeful, not dystopian.
+instruction_hi: friendly robot emotions, friendship या humans की help सीखे। cute और hopeful, dystopian
+  नहीं।
+structure_en: Robot meets child → confusion or mistake → learns one human feeling → happy connection.
+structure_hi: robot बच्चे से मिले → confusion या mistake → एक human feeling सीखे → happy connection।
+visual_style: Friendly robot cartoon, round shapes, bright lab or playground, no text
+music: Cheerful electronic pop instrumental, bouncy and friendly, no vocals
