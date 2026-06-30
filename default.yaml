@@ -84,3 +84,8 @@ llm:
   model: "meta-llama-3.1-8b-instruct"
   temperature: 0.8
   auto_select_model: true
+  quality:
+    enabled: true          # LLM reviewer validates + revises story and image prompts
+    min_score: 6           # accept when score >= this (1-10)
+    max_revisions: 2       # revise attempts per stage when score is low
+    temperature: 0.3       # lower temp for review/revise (generation uses temperature above)

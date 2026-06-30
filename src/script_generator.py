@@ -17,6 +17,7 @@ from openai import OpenAI
 from .config import PipelineConfig
 from .theme_profiles import resolve_theme_profile
 from .visual_prompts import LLM_IMAGE_STYLE
+from .quality_agent import refine_image_prompts, refine_story
 from .story_registry import (
     MAX_UNIQUE_RETRIES,
     is_duplicate,
@@ -466,6 +467,7 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
 
     # Step 1: title + script (deduplicated via records/)
     title, script_text = _generate_unique_story(client, model, config)
+    title, script_text = refine_story(client, model, config, title, script_text)
     logger.info("Generated [%s]: %s (%d chars)", content_type, title, len(script_text))
 
     # Step 2: image prompts (English, no names, physical anchors, chronological)
@@ -482,6 +484,9 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
     image_prompts = _normalize_image_prompts(raw_prompts, scene_count)
     if len(image_prompts) != scene_count:
         raise ValueError(f"Expected {scene_count} image prompts, got {len(image_prompts)}")
+
+    image_prompts = refine_image_prompts(client, model, config, script_text, image_prompts)
+    image_prompts = _normalize_image_prompts(image_prompts, scene_count)
 
     scenes = _build_scenes(script_text, image_prompts, config.duration_sec)
 

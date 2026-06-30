@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -67,11 +67,19 @@ class VideoConfig(BaseModel):
     wan_model: str
 
 
+class QualityConfig(BaseModel):
+    enabled: bool = True
+    min_score: int = 7
+    max_revisions: int = 2
+    temperature: float = 0.3
+
+
 class LLMConfig(BaseModel):
     base_url: str
     model: str
     temperature: float
     auto_select_model: bool
+    quality: QualityConfig = Field(default_factory=QualityConfig)
 
 
 class PipelineConfig(BaseModel):
