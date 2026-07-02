@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: children's samurai tale writer for a narrated short video
 role_hi: बच्चों की samurai tale writer
@@ -12,4 +13,15 @@ instruction_hi: honor, respect और courage की नई कहानी — 
 structure_en: Peaceful village or path → small injustice or need → honorable helpful act → grateful community.
 structure_hi: शांत village → छोटी injustice या need → honorable helpful act → grateful community।
 visual_style: Japanese storybook art, cherry blossoms, gentle warrior, warm light, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Bright adventure narrator energy with an easy flowing pace and light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Speak in clear, natural Hindi with bright adventure narrator energy and an easy flowing pace.
+  Light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Traditional soft koto and flute, peaceful and noble mood, no vocals

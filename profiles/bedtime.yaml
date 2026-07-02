@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: bedtime story specialist writing for slow, soothing narration
 role_hi: bedtime story specialist — धीमी, शांत narration के लिए
@@ -12,4 +13,16 @@ instruction_hi: 'एक नई, शांत bedtime story लिखो। क�
 structure_en: Gentle opening → cozy journey → yawn-soft sleepy ending.
 structure_hi: कोमल शुरुआत → शांत सफ़र → नींद लाने वाला कोमल अंत।
 visual_style: Soft dreamy bedtime illustration, moonlight, cozy colors, peaceful, no text
+voice_en: >-
+  Mary speaks with a light, soft, high-pitched voice — gentle and airy, not deep or heavy.
+  Slow, soothing bedtime pace with peaceful pauses.
+  Quiet, whisper-soft tone that feels calming and safe.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, soft, high-pitched voice — gentle and airy, not deep or heavy.
+  Speak in clear, natural Hindi at a slow, soothing bedtime pace with peaceful pauses.
+  Quiet, whisper-soft tone that feels calming and safe.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Very soft lullaby, slow tempo, sleep-inducing, no vocals

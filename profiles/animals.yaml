@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: children's animal story writer for a narrated short video
 role_hi: बच्चों की animal story writer
@@ -11,4 +12,18 @@ instruction_hi: nature में talking या expressive animals। habitat, c
 structure_en: Forest or meadow → animal hero → small nature challenge → harmonious ending.
 structure_hi: forest या meadow → animal hero → nature challenge → harmonious अंत।
 visual_style: Lush animal storybook art, forest or savanna, expressive faces, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
+  Soft, breezy storytelling tone like a cheerful kids' show host.
+  Easy flowing pace with short natural pauses.
+  Light expressiveness, gentle and fun for young children.
+  Very clear audio, close recording, no background noise.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
+  Speak in clear, natural Hindi with a soft, breezy storytelling tone.
+  Easy flowing pace with short natural pauses.
+  Light expressiveness, gentle and fun for young children.
+  Very clear audio, close recording, no background noise.
+  RULE: Full text should be in audio.
 music: Gentle nature acoustic, birds and soft strings, no vocals

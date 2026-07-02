@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: children's magic story writer for a narrated short video
 role_hi: बच्चों की magic story writer
@@ -12,4 +13,15 @@ instruction_hi: बच्चा small wholesome magic trick या spell discove
 structure_en: Everyday wish → tiny magic appears → helps gently → magic fades with a smile.
 structure_hi: रोज़ की wish → tiny magic → gently help → smile के साथ magic fade।
 visual_style: Sparkling magic cartoon, glowing wand or stars, cheerful child, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Bright adventure narrator energy with an easy flowing pace and light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Speak in clear, natural Hindi with bright adventure narrator energy and an easy flowing pace.
+  Light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Playful magical bells and soft piano, whimsical, no vocals

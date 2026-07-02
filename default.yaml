@@ -1,5 +1,6 @@
 # Pipeline configuration — all settings live here (src/config.py has no fallback defaults).
 # Voice profile is fixed for indic-parler-tts — do not let the LLM override this.
+# Per-theme delivery lives in profiles/*.yaml — English: voice_en, Hindi: voice_hi (default.yaml is fallback only).
 # --theme is optional; omit or use "auto" for serial rotation through themes below.
 
 theme: ""
@@ -49,13 +50,13 @@ themes:
 
 
 voice:
-  # Parler-TTS voice description — passed to description_tokenizer, NOT the narration text.
+  # Parler-TTS voice description — English fallback (Mary); Hindi uses profile voice_hi (Rani).
   description: >-
-    A female speaker named Divya with a warm, melodic, and animated voice.
-    Speak in a warm, gentle, expressive storytelling voice, like a caring teacher reading to young children.
-    Maintain a slow, clear pace with natural pauses after important sentences and slightly longer pauses before surprises.
-    Vary pitch and intonation for characters and events, keeping narration smooth and pleasant.
-    Keep the tone cozy, engaging, and uplifting — calm for gentle stories, a bit more energy for funny or adventure scenes.
+    Mary speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
+    Soft, breezy storytelling tone like a cheerful kids' show host.
+    Easy flowing pace with short natural pauses.
+    Light expressiveness, gentle and fun for young children.
+    Very clear audio, close recording, no background noise.
     RULE: Full text should be in audio.
   model: "ai4bharat/indic-parler-tts"
   device: "mps"
@@ -97,9 +98,12 @@ llm:
     min_score: 6           # accept when score >= this (1-10)
     max_revisions: 2       # revise attempts per stage when score is low
     temperature: 0.3       # lower temp for review/revise (generation uses temperature above)
+    
   seo:
     enabled: true          # generate YouTube title variants, description, tags for reach/CTR
     title_variants: 5      # how many candidate titles the LLM proposes (best one is chosen)
-    max_title_chars: 90    # keep titles short enough to show fully in the Shorts feed
+    max_title_chars: 90    # story title length before hashtags are appended
+    title_hashtag_count: 2 # e.g. "My Story #cartoon #animation" (picked from LLM hashtags)
+    youtube_title_max_chars: 100  # YouTube upload title hard cap
     max_tags: 15           # number of SEO tags to attach on upload
     temperature: 0.7       # a little creativity for punchy titles

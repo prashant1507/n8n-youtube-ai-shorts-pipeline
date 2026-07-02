@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: children's time-travel storyteller for a narrated short video
 role_hi: बच्चों के लिए time-travel storyteller
@@ -13,4 +14,15 @@ structure_en: Present day → accidental or magical time jump → glimpse of ano
   insight.
 structure_hi: आज → time jump → दूसरे era की झलक → एक insight के साथ return।
 visual_style: Whimsical time portal illustration, clock gears, historical hint, bright colors, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Bright adventure narrator energy with an easy flowing pace and light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Speak in clear, natural Hindi with bright adventure narrator energy and an easy flowing pace.
+  Light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Mysterious but gentle ticking ambient, soft orchestral swells, no vocals

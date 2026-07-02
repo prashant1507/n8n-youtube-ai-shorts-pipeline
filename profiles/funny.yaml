@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: viral short-form comedy writer for a narrated video
 role_hi: funny short video के लिए comedy writer
@@ -12,4 +13,17 @@ instruction_hi: एक नया silly या absurd situation लिखो ज�
 structure_en: Describe odd situation → things get sillier → big funny visual payoff at the end.
 structure_hi: अजीब situation → और silly → अंत में बड़ा funny visual moment।
 visual_style: Vibrant cartoon scene, exaggerated expressions, silly humor, colorful, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, playful voice — bright and bouncy, never heavy.
+  Airy, cheerful energy with a natural flowing pace and light emphasis on punchlines.
+  Fun and family-friendly.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, playful voice — bright and bouncy, never heavy.
+  Speak in clear, natural Hindi with airy, cheerful energy and a natural flowing pace.
+  Light emphasis on punchlines.
+  Fun and family-friendly.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Upbeat quirky fun music, comedic timing, no vocals

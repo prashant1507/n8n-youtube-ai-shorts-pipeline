@@ -18,5 +18,5 @@ huggingface-hub>=0.24
 sentencepiece>=0.2.0
 protobuf>=4.25
 
-# Voice: ai4bharat/indic-parler-tts (Divya profile in default.yaml)
+# Voice: ai4bharat/indic-parler-tts (Mary EN / Rani HI in profiles/*.yaml)
 git+https://github.com/huggingface/parler-tts.git@d108732cd57788ec86bc857d99a6cabd66663d68

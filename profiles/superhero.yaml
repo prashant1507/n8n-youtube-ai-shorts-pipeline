@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: children's superhero story writer for a narrated short video
 role_hi: बच्चों की superhero story writer
@@ -12,4 +13,15 @@ instruction_hi: simple power वाला नया kid-friendly superhero ज�
 structure_en: Everyday problem → hero notices → uses power kindly → community feels safer and happier.
 structure_hi: रोज़ की problem → hero notice करे → power kindly use → सब safe और happy feel करें।
 visual_style: Colorful superhero cartoon, cape and bright costume, heroic pose, city or park, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Bright adventure narrator energy with an easy flowing pace and light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Speak in clear, natural Hindi with bright adventure narrator energy and an easy flowing pace.
+  Light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Upbeat heroic orchestral, inspiring but gentle, no vocals

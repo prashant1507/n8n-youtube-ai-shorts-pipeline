@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: riddle storyteller for children in a narrated video
 role_hi: बच्चों के लिए riddle storyteller
@@ -12,4 +13,16 @@ instruction_hi: एक clever riddle पर लिपटी नई कहान�
 structure_en: Story clues → state the riddle → pause feel → reveal answer warmly.
 structure_hi: कहानी में clues → riddle पूछो → answer प्यार से बताओ।
 visual_style: Mysterious storybook illustration, curious mood, soft magical lighting, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, curious voice — playful and airy, never heavy.
+  Easy moderate pace with light pauses before questions and reveals.
+  Bright, engaging mystery tone.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, curious voice — playful and airy, never heavy.
+  Speak in clear, natural Hindi with an easy moderate pace and light pauses before questions and reveals.
+  Bright, engaging mystery tone.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Gentle mysterious music, light wonder, no vocals

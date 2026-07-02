@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: children's pet story writer for a narrated short video
 role_hi: बच्चों की pet story writer
@@ -12,4 +13,18 @@ instruction_hi: बच्चे और pet (dog, cat, rabbit…) की heartwar
 structure_en: Home or park → pet and child bond → small worry → pet helps or they reunite happily.
 structure_hi: घर या park → bond → छोटी worry → pet help या happy reunion।
 visual_style: Cozy pet cartoon, home interior or yard, fluffy friend, warm light, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
+  Soft, breezy storytelling tone like a cheerful kids' show host.
+  Easy flowing pace with short natural pauses.
+  Light expressiveness, gentle and fun for young children.
+  Very clear audio, close recording, no background noise.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
+  Speak in clear, natural Hindi with a soft, breezy storytelling tone.
+  Easy flowing pace with short natural pauses.
+  Light expressiveness, gentle and fun for young children.
+  Very clear audio, close recording, no background noise.
+  RULE: Full text should be in audio.
 music: Warm acoustic guitar, cozy family mood, no vocals

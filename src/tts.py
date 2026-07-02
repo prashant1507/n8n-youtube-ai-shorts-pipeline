@@ -1,4 +1,4 @@
-"""Text-to-speech using indic-parler-tts with fixed Divya voice profile."""
+"""Text-to-speech using indic-parler-tts (Mary for English, Rani for Hindi)."""
 
 from __future__ import annotations
 
@@ -93,9 +93,9 @@ def generate_voice(
     config: PipelineConfig,
     output_path: Path,
     scene_segments: list[str] | None = None,
+    description: str | None = None,
 ) -> Path:
-    """Generate voice.wav using fixed Divya description from config."""
-    description = config.voice.description.strip()
+    voice_desc = (description or config.voice.description).strip()
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     segments = scene_segments if scene_segments else [narration]
@@ -104,7 +104,7 @@ def generate_voice(
         segments = [narration]
 
     logger.info("Generating voice for %d segment(s)", len(segments))
-    chunks = [_generate_chunk(seg, description, config) for seg in segments]
+    chunks = [_generate_chunk(seg, voice_desc, config) for seg in segments]
     audio = _concat_wavs(chunks)
 
     model, _, _ = _load_model(config)

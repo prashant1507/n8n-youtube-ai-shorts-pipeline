@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: child-friendly science fiction writer for a narrated short video
 role_hi: बच्चों के लिए science fiction writer
@@ -12,4 +13,15 @@ instruction_hi: 'नई simple sci-fi mini-story: friendly robots, space explore
 structure_en: Future setting → curious problem → clever kid-friendly solution → hopeful ending.
 structure_hi: future setting → curious problem → clever बच्चों वाला solution → hopeful अंत।
 visual_style: Bright futuristic cartoon scene, friendly tech, stars and planets, colorful, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Bright adventure narrator energy with an easy flowing pace and light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, expressive voice — lively and airy, not deep or dramatic.
+  Speak in clear, natural Hindi with bright adventure narrator energy and an easy flowing pace.
+  Light pauses for wonder.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Light ambient, futuristic but calm, no vocals

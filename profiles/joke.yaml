@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: family-friendly comedy writer for a narrated short video
 role_hi: परिवार के लिए clean comedy writer
@@ -12,4 +13,17 @@ instruction_hi: एक बिल्कुल नया, साफ-सुथर�
 structure_en: First 60% = setup. Last 40% = punchline. End immediately after the laugh.
 structure_hi: पहले setup, अंत में punchline। हँसी के तुरंत बाद खत्म करो।
 visual_style: Bright cartoon illustration, expressive funny characters, playful colors, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, playful voice — bright and bouncy, never heavy.
+  Airy, cheerful energy with a natural flowing pace and light emphasis on punchlines.
+  Fun and family-friendly.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, playful voice — bright and bouncy, never heavy.
+  Speak in clear, natural Hindi with airy, cheerful energy and a natural flowing pace.
+  Light emphasis on punchlines.
+  Fun and family-friendly.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Light playful comedy music, bouncy and fun, no vocals

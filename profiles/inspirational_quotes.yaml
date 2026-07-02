@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: inspirational narrator writing short quote-based videos for children
 role_hi: बच्चों के लिए inspirational quote narrator
@@ -12,4 +13,16 @@ instruction_hi: बच्चों के लिए ONE original inspirational q
 structure_en: Hook question → mini story or metaphor → state the quote → one-line encouragement.
 structure_hi: hook question → mini story या metaphor → quote → one-line encouragement।
 visual_style: Inspiring sunrise illustration, child looking hopeful, golden light, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, upbeat voice — bright and encouraging, not deep or solemn.
+  Airy, positive tone with an easy moderate pace.
+  Friendly inspiration for young listeners.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, upbeat voice — bright and encouraging, not deep or solemn.
+  Speak in clear, natural Hindi with an airy, positive tone and easy moderate pace.
+  Friendly inspiration for young listeners.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Uplifting soft piano and strings, hopeful, no vocals

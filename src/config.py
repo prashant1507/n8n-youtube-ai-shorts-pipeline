@@ -75,6 +75,8 @@ class SeoConfig(BaseModel):
     enabled: bool = True
     title_variants: int = 5
     max_title_chars: int = 90
+    title_hashtag_count: int = 2
+    youtube_title_max_chars: int = 100
     max_tags: int = 15
     temperature: float = 0.7
 

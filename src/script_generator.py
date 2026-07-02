@@ -22,7 +22,7 @@ from .llm_common import (
     theme_key,
     word_target,
 )
-from .theme_profiles import resolve_theme_profile
+from .theme_profiles import resolve_theme_profile, resolve_voice_description
 from .visual_prompts import LLM_IMAGE_STYLE
 from .quality_agent import refine_image_prompts, refine_story
 from .story_registry import (
@@ -69,6 +69,12 @@ YOUTUBE_META_SCHEMA: dict[str, Any] = {
             "minItems": 1,
             "maxItems": 8,
         },
+        "title_variants": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 1,
+            "maxItems": 8,
+        },
         "description": {"type": "string"},
         "tags": {
             "type": "array",
@@ -84,7 +90,7 @@ YOUTUBE_META_SCHEMA: dict[str, Any] = {
         },
         "hook_text": {"type": "string"},
     },
-    "required": ["titles", "description", "tags", "hashtags", "hook_text"],
+    "required": ["titles", "title_variants", "description", "tags", "hashtags", "hook_text"],
     "additionalProperties": False,
 }
 
@@ -162,7 +168,7 @@ def _story_system_prompt(config: PipelineConfig) -> str:
 
     task_key = "task_hi" if lang == "hindi" else "task_en"
     default_task = (
-        "Write a script that will be READ ALOUD by a TTS narrator (Divya voice). "
+        "Write a script that will be READ ALOUD by a TTS narrator (Mary for English, Rani for Hindi). "
         "Invent something completely original — your own characters, setting, and plot. "
         "Do NOT retell famous stories, fairy tales, movies, or existing IP."
     )
@@ -404,6 +410,14 @@ def _default_music_prompt(config: PipelineConfig) -> str:
     return _theme_profile(config)["music"]
 
 
+def _default_voice_description(config: PipelineConfig) -> str:
+    return resolve_voice_description(
+        config.theme,
+        language_label(config),
+        config.voice.description,
+    )
+
+
 def _story_retry_addon(config: PipelineConfig, rejected_titles: list[str]) -> str:
     avoid = recent_titles(theme_key(config.theme), language_label(config), limit=8)
     avoid_names = recent_protagonist_names(language_label(config), limit=12)
@@ -472,38 +486,45 @@ def _youtube_meta_system(config: PipelineConfig) -> str:
     content_type = theme_key(config.theme)
     if lang == "hindi":
         lang_rule = (
-            "Write titles, description and hook_text in natural Hindi (Devanagari). "
-            "Tags may mix Hindi and simple English/transliterated keywords. "
-            "hashtags should include Hindi and English variants."
+            "Write titles (upload), description and hook_text in natural Hindi (Devanagari). "
+            "Write title_variants, tags and hashtags in English only (no Hindi script). "
+            "title_variants are English alternate YouTube titles for SEO — same story, English wording."
         )
     else:
-        lang_rule = "Write titles, description, hook_text, tags and hashtags in English."
+        lang_rule = "Write titles, title_variants, description, hook_text, tags and hashtags in English."
 
     return (
         "You are a YouTube Shorts growth strategist who writes packaging (titles, "
         "descriptions, tags) that maximizes click-through rate and reach.\n"
         f"Content type: {content_type}. Audience: family/kids-friendly viewers.\n\n"
-        "### TITLES ###\n"
-        f"Propose {seo.title_variants} DISTINCT title candidates, strongest first.\n"
+        "### TITLES (upload) ###\n"
+        f"Propose {seo.title_variants} DISTINCT upload title candidates in the story language, strongest first.\n"
         f"- Each title <= {seo.max_title_chars} characters.\n"
         "- Use curiosity gaps, specificity, emotion, or a light question — but never mislead "
         "(the title must match the actual story).\n"
         "- No ALL CAPS words, no clickbait lies, no emojis, family-safe.\n"
         "- Do not put the word 'Shorts' or hashtags inside the titles.\n\n"
+        "### TITLE VARIANTS (English alternates) ###\n"
+        f"Propose {seo.title_variants} DISTINCT English alternate titles (same story, English only). "
+        "For Hindi stories these must be English; for English stories match the upload titles.\n"
+        f"- Each <= {seo.max_title_chars} characters, no hashtags, family-safe.\n\n"
         "### DESCRIPTION ###\n"
         "2-4 short sentences: lead with the hook/benefit, tease the story, end with a soft "
         "call to action (like/subscribe/watch till end). No hashtags in the description body.\n\n"
         "### TAGS ###\n"
-        f"Give up to {seo.max_tags} lowercase SEO keywords/phrases relevant to the story, theme, "
-        "and audience (mix broad + specific). No '#', no duplicates.\n\n"
+        f"Give up to {seo.max_tags} lowercase English SEO keywords/phrases relevant to the story, theme, "
+        "and audience (mix broad + specific). No '#', no duplicates, no Hindi script.\n\n"
         "### HASHTAGS ###\n"
-        "3-5 hashtags WITHOUT the '#' symbol (added later). Always include 'shorts'.\n\n"
+        "4-6 English hashtags WITHOUT the '#' symbol (added later). Always include 'shorts'. "
+        "ASCII English only — no Hindi/Devanagari. "
+        "Put the strongest discovery tags first — the first 2 are appended to the YouTube title. "
+        "Theme-specific tags are welcome.\n\n"
         "### HOOK_TEXT ###\n"
         "A punchy on-screen hook of at most 8 words for the first frame — bold and curiosity-driving.\n\n"
         f"### LANGUAGE ###\n{lang_rule}\n\n"
         "### OUTPUT PROTOCOL ###\n"
         "Return ONLY raw JSON on a single line. It must begin with '{' and end with '}'.\n"
-        'Keys: "titles" (array), "description" (string), "tags" (array), '
+        'Keys: "titles" (array), "title_variants" (array), "description" (string), "tags" (array), '
         '"hashtags" (array), "hook_text" (string).'
     )
 
@@ -516,15 +537,34 @@ def _youtube_meta_user(config: PipelineConfig, title: str, script_text: str) -> 
     )
 
 
-_HASHTAG_CLEAN = re.compile(r"[^0-9A-Za-z\u0900-\u097F]+")
+_HASHTAG_CLEAN = re.compile(r"[^0-9A-Za-z]+")
+_DEVANAGARI = re.compile(r"[\u0900-\u097F]+")
 
 
 def _clean_tag(tag: str) -> str:
     return re.sub(r"\s+", " ", str(tag).replace("#", "").strip()).strip(" ,")
 
 
+def _english_seo_tag(tag: str) -> str:
+    """YouTube upload tag — English ASCII only (strip Hindi script)."""
+    text = _DEVANAGARI.sub("", _clean_tag(tag))
+    text = re.sub(r"[^0-9A-Za-z ]+", " ", text).strip().lower()
+    return re.sub(r"\s+", " ", text)
+
+
+def _english_title_variant(title: str) -> str:
+    """English-only title variant — strip Devanagari, keep readable English."""
+    text = _DEVANAGARI.sub("", str(title).strip().strip('"'))
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def _has_devanagari(text: str) -> bool:
+    return bool(_DEVANAGARI.search(text))
+
+
 def _clean_hashtag(tag: str) -> str:
-    return _HASHTAG_CLEAN.sub("", str(tag).replace("#", "").strip())
+    return _HASHTAG_CLEAN.sub("", str(tag).replace("#", "").strip()).lower()
 
 
 def _dedupe_keep_order(items: list[str]) -> list[str]:
@@ -547,6 +587,38 @@ def _choose_youtube_title(candidates: list[str], fallback: str, max_chars: int) 
     if len(best) > max_chars:
         best = best[: max_chars - 1].rstrip() + "\u2026"
     return best
+
+
+def _pick_title_hashtags(hashtags: list[str], count: int) -> list[str]:
+    """Take the first N hashtags from the LLM list for the upload title."""
+    if count <= 0 or not hashtags:
+        return []
+    return hashtags[:count]
+
+
+def _append_hashtags_to_title(
+    base_title: str,
+    hashtags: list[str],
+    *,
+    max_chars: int,
+    hashtag_count: int,
+) -> str:
+    """Build upload title like 'The Great Pastry Disaster #cartoon #animation'."""
+    base = base_title.strip().strip('"')
+    picked = _pick_title_hashtags(hashtags, hashtag_count)
+    if not picked:
+        return base[:max_chars]
+
+    suffix = " " + " ".join(f"#{tag}" for tag in picked)
+    if len(suffix) >= max_chars:
+        return base[:max_chars]
+
+    max_base = max_chars - len(suffix)
+    if len(base) > max_base:
+        if max_base <= 1:
+            return base[:max_chars]
+        base = base[: max_base - 1].rstrip() + "\u2026"
+    return base + suffix
 
 
 def generate_youtube_metadata(
@@ -579,27 +651,57 @@ def generate_youtube_metadata(
 
     raw_titles = [str(t).strip().strip('"') for t in (result.get("titles") or []) if str(t).strip()]
     raw_titles = _dedupe_keep_order(raw_titles)
-    youtube_title = _choose_youtube_title(raw_titles, title, seo.max_title_chars)
+
+    raw_variants = [
+        str(t).strip().strip('"') for t in (result.get("title_variants") or []) if str(t).strip()
+    ]
+    lang = language_label(config)
+    if lang == "hindi":
+        title_variants = _dedupe_keep_order(
+            [v for v in (_english_title_variant(x) for x in raw_variants) if v and not _has_devanagari(v)]
+        )
+        upload_candidates = raw_titles
+    else:
+        title_variants = _dedupe_keep_order(
+            [v for v in (_english_title_variant(x) for x in (raw_variants or raw_titles)) if v]
+        )
+        upload_candidates = raw_titles or title_variants
 
     tags = _dedupe_keep_order(
-        [t for t in (_clean_tag(x) for x in (result.get("tags") or [])) if t]
+        [t for t in (_english_seo_tag(x) for x in (result.get("tags") or [])) if t]
     )[: seo.max_tags]
 
     hashtags = _dedupe_keep_order(
         [h for h in (_clean_hashtag(x) for x in (result.get("hashtags") or [])) if h]
     )
     if not any(h.lower() == "shorts" for h in hashtags):
-        hashtags.insert(0, "shorts")
-    hashtags = hashtags[:5]
+        hashtags.append("shorts")
+    hashtags = hashtags[:6]
 
     description = str(result.get("description") or "").strip()
     hook_text = str(result.get("hook_text") or "").strip().strip('"')
 
-    logger.info("YouTube SEO title: %s (%d variants, %d tags)", youtube_title, len(raw_titles), len(tags))
+    base_title = _choose_youtube_title(upload_candidates, title, seo.max_title_chars)
+    youtube_title = _append_hashtags_to_title(
+        base_title,
+        hashtags,
+        max_chars=seo.youtube_title_max_chars,
+        hashtag_count=seo.title_hashtag_count,
+    )
+
+    logger.info(
+        "YouTube SEO title: %s (%d upload titles, %d EN variants, %d tags, title hashtags: %d)",
+        youtube_title,
+        len(upload_candidates),
+        len(title_variants),
+        len(tags),
+        seo.title_hashtag_count,
+    )
 
     return {
         "youtube_title": youtube_title,
-        "title_variants": raw_titles,
+        "youtube_title_base": base_title,
+        "title_variants": title_variants,
         "youtube_description": description,
         "youtube_tags": tags,
         "hashtags": hashtags,
@@ -651,6 +753,7 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
         "theme": content_type,
         "scenes": scenes,
         "music_prompt": _default_music_prompt(config),
+        "voice_description": _default_voice_description(config),
     }
 
     metadata = generate_youtube_metadata(client, model, config, title, script_text)

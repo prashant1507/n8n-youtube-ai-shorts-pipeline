@@ -30,6 +30,43 @@ def _theme_key(theme: str) -> str:
     return theme.lower().strip().replace(" ", "_")
 
 
+def _is_hindi(language: str) -> bool:
+    lang = language.lower().strip()
+    return lang in ("hi", "hindi")
+
+
+def resolve_voice_description(theme: str, language: str, fallback: str) -> str:
+    """Parler-TTS voice description from profiles/{theme}.yaml, else default.yaml fallback.
+
+    Hindi uses voice_hi; English uses voice_en.
+    """
+    profile = resolve_theme_profile(theme)
+    hindi = _is_hindi(language)
+
+    if hindi:
+        if profile.get("voice_hi"):
+            return profile["voice_hi"]
+    elif profile.get("voice_en"):
+        return profile["voice_en"]
+
+    if profile.get("voice"):
+        return profile["voice"]
+
+    return fallback.strip()
+
+
+def resolve_voice_from_script(script: dict, fallback: str) -> str:
+    """Voice description from script.json, or resolve from theme if missing (older runs)."""
+    existing = str(script.get("voice_description", "")).strip()
+    if existing:
+        return existing
+    theme = str(script.get("content_type") or script.get("theme") or "")
+    language = str(script.get("language") or "english")
+    if not theme:
+        return fallback.strip()
+    return resolve_voice_description(theme, language, fallback)
+
+
 @lru_cache(maxsize=1)
 def load_theme_profiles() -> dict[str, dict[str, str]]:
     """Load all profiles/*.yaml (skips files starting with _)."""

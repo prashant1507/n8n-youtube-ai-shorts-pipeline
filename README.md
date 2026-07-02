@@ -9,7 +9,7 @@
 [![LLM](https://img.shields.io/badge/LLM-OpenAI%20compatible-412991?style=flat&logo=openai&logoColor=white)](https://lmstudio.ai/)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat&logo=huggingface&logoColor=black)](https://huggingface.co/)
 [![Diffusers](https://img.shields.io/badge/Diffusers-0.38+-121212?style=flat&logo=huggingface&logoColor=white)](https://huggingface.co/docs/diffusers)
-[![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Divya-2563EB?style=flat&logo=googleassistant&logoColor=white)](https://huggingface.co/ai4bharat/indic-parler-tts)
+[![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Mary%2FRani-2563EB?style=flat&logo=googleassistant&logoColor=white)](https://huggingface.co/ai4bharat/indic-parler-tts)
 [![Wan](https://img.shields.io/badge/Wan-2.2%20optional-6366F1?style=flat&logo=apple&logoColor=white)](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)
 
 **Live channel:** [@ShortSpark123a](https://www.youtube.com/@ShortSpark123a/shorts)
@@ -20,7 +20,7 @@ final MP4. Built for **Apple Silicon (MPS)** with optional **n8n** scheduling an
 Runs fully local except for the LLM (LM Studio) and Hugging Face model downloads.
 
 ```
-LM Studio (story)  →  Parler-TTS (Divya voice)  →  MusicGen
+LM Studio (story)  →  Parler-TTS (Mary / Rani)  →  MusicGen
                               ↓
                     FLUX.2 Klein images  →  Ken Burns or Wan clips
                               ↓
@@ -30,8 +30,8 @@ LM Studio (story)  →  Parler-TTS (Divya voice)  →  MusicGen
 ## Features
 
 - **Story generation** — theme profiles (`profiles/*.yaml`), duplicate-title avoidance, optional LLM quality reviewer
-- **Voice** — [indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts) with a fixed **Divya** storytelling
-  profile (English & Hindi)
+- **Voice** — [indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts): **Mary** (English), **Rani** (Hindi);
+  delivery adapts per theme in `profiles/*.yaml`
 - **Music** — MusicGen instrumental bed, mixed under narration
 - **Visual tiers**
     - **`flux`** — FLUX.2 Klein scene images + Ken Burns zoom (default, best balance of quality and speed)
@@ -90,20 +90,23 @@ Alternatively, set `HF_TOKEN` or `HUGGING_FACE_HUB_TOKEN` in your shell before r
 
 #### Request access to gated model repos
 
-Some models require accepting a license on the Hub **before** download works. Log into the website, open each repo, and click **Agree and access repository** (wording may vary):
+Some models require accepting a license on the Hub **before** download works. Log into the website, open each repo, and
+click **Agree and access repository** (wording may vary):
 
-| Model | Hub repo | Gated? |
-|-------|----------|--------|
-| Parler-TTS (voice) | [ai4bharat/indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts) | No |
-| MusicGen (music) | [facebook/musicgen-small](https://huggingface.co/facebook/musicgen-small) | No |
-| FLUX.2 Klein (images) | [black-forest-labs/FLUX.2-klein-4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) | **Yes** |
-| Wan 2.2 (optional video) | [Wan-AI/Wan2.2-TI2V-5B-Diffusers](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers) | Check repo page |
+| Model                    | Hub repo                                                                                      | Gated?          |
+|--------------------------|-----------------------------------------------------------------------------------------------|-----------------|
+| Parler-TTS (voice)       | [ai4bharat/indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts)               | No              |
+| MusicGen (music)         | [facebook/musicgen-small](https://huggingface.co/facebook/musicgen-small)                     | No              |
+| FLUX.2 Klein (images)    | [black-forest-labs/FLUX.2-klein-4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) | **Yes**         |
+| Wan 2.2 (optional video) | [Wan-AI/Wan2.2-TI2V-5B-Diffusers](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)     | Check repo page |
 
-Wait until access is approved (usually instant for FLUX). If `hf download` returns **403 Forbidden**, you are not logged in or have not accepted the license yet.
+Wait until access is approved (usually instant for FLUX). If `hf download` returns **403 Forbidden**, you are not logged
+in or have not accepted the license yet.
 
 #### Download models
 
-Pre-downloading avoids long waits on the first run. Cache location: `~/.cache/huggingface/hub/` (~15–20 GB for flux tier; Wan adds more).
+Pre-downloading avoids long waits on the first run. Cache location: `~/.cache/huggingface/hub/` (~15–20 GB for flux
+tier; Wan adds more).
 
 **Voice + music** (flux-venv):
 
@@ -135,7 +138,9 @@ mlxgen prepare --model Wan-AI/Wan2.2-TI2V-5B-Diffusers --path models/wan2.2-ti2v
 deactivate
 ```
 
-If you skip pre-download, TTS and MusicGen still fetch on first use. FLUX **will not** auto-download while `flux_local_files_only` is `true` — run `hf download black-forest-labs/FLUX.2-klein-4B` first, or set `flux_local_files_only: false` in `default.yaml` to allow online fetch (slower first run).
+If you skip pre-download, TTS and MusicGen still fetch on first use. FLUX **will not** auto-download while
+`flux_local_files_only` is `true` — run `hf download black-forest-labs/FLUX.2-klein-4B` first, or set
+`flux_local_files_only: false` in `default.yaml` to allow online fetch (slower first run).
 
 ### 2. Clone and create virtual environments
 
@@ -218,7 +223,7 @@ Each run creates a folder under `output/{run_id}/`:
 | Stage       | Artifact                            | Description                     |
 |-------------|-------------------------------------|---------------------------------|
 | `script`    | `script.json`                       | Title, narration, scene prompts |
-| `voice`     | `voice.wav`                         | Parler-TTS (Divya)              |
+| `voice`     | `voice.wav`                         | Parler-TTS (Mary / Rani)        |
 | `music`     | `music.wav`                         | MusicGen background             |
 | `images`    | `images/scene_*.png`                | FLUX Klein (skipped for `wan`)  |
 | `clips`     | `clips/scene_*.mp4`                 | Ken Burns or Wan                |
@@ -262,7 +267,7 @@ All defaults live in **`default.yaml`** (validated by Pydantic in `src/config.py
 | Section  | Key settings                                                               |
 |----------|----------------------------------------------------------------------------|
 | `themes` | Content types; each has a prompt profile in `profiles/`                    |
-| `voice`  | Parler-TTS model + Divya voice description                                 |
+| `voice`  | Parler-TTS model + per-theme voice descriptions (Mary / Rani)              |
 | `music`  | MusicGen model, prompt, mix volume                                         |
 | `video`  | Tier, resolution, FLUX/Wan model paths, Ken Burns motion                   |
 | `llm`    | LM Studio URL, model name, quality reviewer (`min_score`, `max_revisions`) |
@@ -313,7 +318,7 @@ Generated at runtime (gitignored): `output/`, `records/`, `models/`, `*-venv/`.
 ## Themes & content types
 
 Add a name to `themes:` in `default.yaml`, then create `profiles/{theme}.yaml` with `instruction_en` / `instruction_hi`
-and optional `visual_style`.
+and optional `visual_style`, `music`, `voice_en` (English TTS), and `voice_hi` (Hindi TTS).
 
 Built-in themes include: story, joke, bedtime, fantasy, adventure, dragons, and more — see
 `profiles/`.

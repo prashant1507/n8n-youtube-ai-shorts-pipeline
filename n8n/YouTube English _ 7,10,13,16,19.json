@@ -1,5 +1,5 @@
 {
-  "name": "YouTube English",
+  "name": "YouTube English | 7,10,13,16,19",
   "nodes": [
     {
       "parameters": {
@@ -7,29 +7,29 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "0 6,10,14,18,22 * * *"
+              "expression": "0 7,10,13,16,19 * * *"
             }
           ]
         }
       },
-      "id": "a1b2c3d4-0001-4000-8000-000000000001",
-      "name": "Schedule 5\u00d7 Daily",
+      "id": "22021a32-c728-4d93-b286-1af8d05b521d",
+      "name": "Schedule 5× Daily",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        300
+        39456,
+        12272
       ]
     },
     {
       "parameters": {},
-      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "id": "9e6e764a-8678-4d88-a708-c6d419e1f4cd",
       "name": "Manual Test",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
-        100
+        39456,
+        12064
       ]
     },
     {
@@ -94,28 +94,28 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "id": "b4897da9-7535-4edc-9d42-b1bc5e26f6b1",
       "name": "Configure Job",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        260,
-        200
+        39728,
+        12176
       ],
       "notesInFlow": true,
       "notes": "REQUIRED: lang (en or hi).\nSet pipelineApiBase (not /generate). Host n8n: http://127.0.0.1:8765"
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst lang = String(item.lang || '').trim().toLowerCase();\n\nif (!lang) {\n  throw new Error('Configure Job: lang is required. Set to \"en\" or \"hi\".');\n}\nif (!['en', 'hi'].includes(lang)) {\n  throw new Error(`Configure Job: invalid lang \"${lang}\" \u2014 use \"en\" or \"hi\".`);\n}\n\nlet theme = String(item.theme ?? '').trim().toLowerCase();\nif (theme === 'auto') {\n  theme = '';\n}\n\nconst themesCsv = String(item.themesCsv ?? '').trim();\nif (themesCsv) {\n  const pool = themesCsv.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);\n  if (pool.length === 0) {\n    throw new Error('Configure Job: themesCsv is set but contains no valid themes.');\n  }\n}\n\nconst duration = Number(item.duration ?? 45);\nif (Number.isNaN(duration) || duration < 10 || duration > 120) {\n  throw new Error('Configure Job: duration must be between 10 and 120 seconds.');\n}\n\nconst tier = String(item.tier || 'flux').trim().toLowerCase();\nif (!['flux', 'wan'].includes(tier)) {\n  throw new Error(`Configure Job: invalid tier \"${tier}\" \u2014 use \"flux\" or \"wan\".`);\n}\n\nconst privacy = String(item.youtubePrivacy || 'private').trim().toLowerCase();\nif (!['private', 'unlisted', 'public'].includes(privacy)) {\n  throw new Error(`Configure Job: invalid youtubePrivacy \"${privacy}\".`);\n}\n\nconst pipelineApiBase = String(item.pipelineApiBase || item.pipelineApiUrl || 'http://127.0.0.1:8765')\n  .trim()\n  .replace(/\\/generate\\/?$/, '')\n  .replace(/\\/$/, '');\nconst pipelineHostPath = String(item.pipelineHostPath || '/Users/user/Downloads/n8n-youtube').trim().replace(/\\/$/, '');\nconst pipelineContainerPath = String(item.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos').trim().replace(/\\/$/, '');\n\nreturn [{\n  json: {\n    lang,\n    theme,\n    themesCsv,\n    themeRandom: !theme,\n    duration,\n    tier,\n    youtubePrivacy: privacy,\n    pipelineApiBase,\n    pipelineHostPath,\n    pipelineContainerPath,\n  },\n}];"
+        "jsCode": "const item = $input.first().json;\nconst lang = String(item.lang || '').trim().toLowerCase();\n\nif (!lang) {\n  throw new Error('Configure Job: lang is required. Set to \"en\" or \"hi\".');\n}\nif (!['en', 'hi'].includes(lang)) {\n  throw new Error(`Configure Job: invalid lang \"${lang}\" — use \"en\" or \"hi\".`);\n}\n\nlet theme = String(item.theme ?? '').trim().toLowerCase();\nif (theme === 'auto') {\n  theme = '';\n}\n\nconst themesCsv = String(item.themesCsv ?? '').trim();\nif (themesCsv) {\n  const pool = themesCsv.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean);\n  if (pool.length === 0) {\n    throw new Error('Configure Job: themesCsv is set but contains no valid themes.');\n  }\n}\n\nconst duration = Number(item.duration ?? 45);\nif (Number.isNaN(duration) || duration < 10 || duration > 120) {\n  throw new Error('Configure Job: duration must be between 10 and 120 seconds.');\n}\n\nconst tier = String(item.tier || 'flux').trim().toLowerCase();\nif (!['flux', 'wan'].includes(tier)) {\n  throw new Error(`Configure Job: invalid tier \"${tier}\" — use \"flux\" or \"wan\".`);\n}\n\nconst privacy = String(item.youtubePrivacy || 'private').trim().toLowerCase();\nif (!['private', 'unlisted', 'public'].includes(privacy)) {\n  throw new Error(`Configure Job: invalid youtubePrivacy \"${privacy}\".`);\n}\n\nconst pipelineApiBase = String(item.pipelineApiBase || item.pipelineApiUrl || 'http://127.0.0.1:8765')\n  .trim()\n  .replace(/\\/generate\\/?$/, '')\n  .replace(/\\/$/, '');\nconst pipelineHostPath = String(item.pipelineHostPath || '/Users/user/Downloads/n8n-youtube').trim().replace(/\\/$/, '');\nconst pipelineContainerPath = String(item.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos').trim().replace(/\\/$/, '');\n\nreturn [{\n  json: {\n    lang,\n    theme,\n    themesCsv,\n    themeRandom: !theme,\n    duration,\n    tier,\n    youtubePrivacy: privacy,\n    pipelineApiBase,\n    pipelineHostPath,\n    pipelineContainerPath,\n  },\n}];"
       },
-      "id": "a1b2c3d4-0004-4000-8000-000000000004",
+      "id": "a7afd8bf-cb06-43bb-abf7-1c5fc6882073",
       "name": "Validate Language",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        500,
-        200
+        39968,
+        12176
       ]
     },
     {
@@ -129,13 +129,13 @@
           "timeout": 600000
         }
       },
-      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "id": "6357f04f-6581-4e92-89bb-4907781a030e",
       "name": "Generate Script",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        740,
-        200
+        40208,
+        12176
       ]
     },
     {
@@ -149,13 +149,13 @@
           "timeout": 3600000
         }
       },
-      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "id": "6b17ac57-3b1a-441f-8be6-74fb6529530c",
       "name": "Generate Voice",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        980,
-        200
+        40448,
+        12176
       ]
     },
     {
@@ -169,13 +169,13 @@
           "timeout": 3600000
         }
       },
-      "id": "a1b2c3d4-0012-4000-8000-000000000012",
+      "id": "49407126-c344-4326-8cc3-cbe99d00bd68",
       "name": "Generate Music",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1220,
-        200
+        40688,
+        12176
       ]
     },
     {
@@ -189,13 +189,13 @@
           "timeout": 3600000
         }
       },
-      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "id": "b57f1835-33f4-4a80-9ac7-8e9906ded469",
       "name": "Generate Images",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1460,
-        200
+        40928,
+        12176
       ],
       "notesInFlow": true,
       "notes": "Skipped automatically when tier=wan"
@@ -211,13 +211,13 @@
           "timeout": 3600000
         }
       },
-      "id": "a1b2c3d4-0014-4000-8000-000000000014",
+      "id": "40ae4819-e7d9-48d8-86bf-11e5acbaa779",
       "name": "Generate Clips",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1700,
-        200
+        41168,
+        12176
       ]
     },
     {
@@ -231,13 +231,13 @@
           "timeout": 600000
         }
       },
-      "id": "a1b2c3d4-0015-4000-8000-000000000015",
+      "id": "581d0361-d49d-458b-8892-18a5a210e449",
       "name": "Assemble Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1940,
-        200
+        41408,
+        12176
       ]
     },
     {
@@ -251,13 +251,13 @@
           "timeout": 600000
         }
       },
-      "id": "a1b2c3d4-0016-4000-8000-000000000016",
+      "id": "66a1ca47-a710-4d71-92e0-00b8e8484524",
       "name": "Add Subtitles",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2180,
-        200
+        41648,
+        12176
       ],
       "notesInFlow": true,
       "notes": "Skipped automatically for Hindi (hi)"
@@ -273,13 +273,13 @@
           "timeout": 300000
         }
       },
-      "id": "a1b2c3d4-0017-4000-8000-000000000017",
+      "id": "549ee133-a575-4241-93f7-00c9450cb927",
       "name": "Mix Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2420,
-        200
+        41888,
+        12176
       ]
     },
     {
@@ -293,31 +293,30 @@
           "timeout": 600000
         }
       },
-      "id": "a1b2c3d4-0018-4000-8000-000000000018",
+      "id": "43d63d62-9acb-4631-a9cd-0cae788a5dce",
       "name": "Final Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2660,
-        200
+        42128,
+        12176
       ]
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nfunction stripTrailingSlash(s) {\n  return s.endsWith('/') ? s.slice(0, -1) : s;\n}\n\nconst config = loadConfig();\nconst hostRoot = stripTrailingSlash(String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube'));\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = stripTrailingSlash(String(config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'));\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst NL = String.fromCharCode(10);\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\n// Hashtags: prefer LLM hashtags, else derive. Strip '#', dedupe, always include shorts.\nlet hashtags = Array.isArray(script.hashtags) && script.hashtags.length\n  ? script.hashtags.slice()\n  : ['shorts', theme, langTag, 'kids', 'story'];\nhashtags = hashtags\n  .map((h) => String(h).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').trim().split(' ').filter(Boolean).join(''))\n  .filter(Boolean)\n  .map((h) => h.toLowerCase());\nif (!hashtags.includes('shorts')) hashtags.push('shorts');\nhashtags = Array.from(new Set(hashtags)).slice(0, 6);\nconst hashtagLine = hashtags.slice(0, 5).map((h) => '#' + h).join(' ');\n\nfunction buildUploadTitle(base, allTags, maxChars, hashtagCount) {\n  let titleBase = String(base || '').trim();\n  if (titleBase.includes('#')) return titleBase.slice(0, maxChars);\n  const titleTags = allTags.slice(0, hashtagCount);\n  if (!titleTags.length) return titleBase.slice(0, maxChars);\n  const suffix = ' ' + titleTags.map((h) => '#' + h).join(' ');\n  const maxBase = maxChars - suffix.length;\n  if (maxBase <= 10) return titleBase.slice(0, maxChars);\n  if (titleBase.length > maxBase) titleBase = titleBase.slice(0, maxBase - 1).trim() + '\u2026';\n  return (titleBase + suffix).slice(0, maxChars);\n}\n\n// Title: LLM SEO title (often already includes hashtags) or base title + first LLM hashtags.\nconst titleHashtagCount = 2;\nconst titleMaxChars = 100;\nlet title = buildUploadTitle(\n  script.youtube_title || script.title || ('Kids ' + theme + ' - ' + langTag),\n  hashtags,\n  titleMaxChars,\n  titleHashtagCount,\n);\nif (title.length > titleMaxChars) title = title.slice(0, titleMaxChars - 1).trim() + '\u2026';\n\n// Description: prefer LLM SEO description, else narration. Append hashtags. Cap ~4900 chars.\nconst narration = script.narration || script.script || '';\nconst descBody = String(script.youtube_description || narration || '').trim();\nlet description = (descBody + NL + NL + hashtagLine).trim();\nif (description.length > 4900) description = description.slice(0, 4900);\n\n// Tags: prefer LLM SEO tags, else derive. Sanitize, dedupe, obey YouTube ~500-char total budget.\nlet tagList = Array.isArray(script.youtube_tags) && script.youtube_tags.length\n  ? script.youtube_tags.slice()\n  : [theme, 'kids', 'story', 'shorts', 'hindi', 'cartoon'];\ntagList = tagList\n  .map((t) => String(t).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').split(',').join('').trim().split(' ').filter(Boolean).join(' '))\n  .filter(Boolean)\n  .map((t) => t.toLowerCase());\ntagList = Array.from(new Set(tagList));\nconst cappedTags = [];\nlet tagChars = 0;\nfor (const t of tagList) {\n  const add = (cappedTags.length ? 1 : 0) + t.length;\n  if (tagChars + add > 480) break;\n  cappedTags.push(t);\n  tagChars += add;\n  if (cappedTags.length >= 15) break;\n}\nconst tags = cappedTags.join(',');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || (stripTrailingSlash(apiBase) + '/video/' + result.run_id);\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags,\n    hashtags: hashtagLine,\n    hookText: String(script.hook_text || ''),\n    titleVariants: Array.isArray(script.title_variants) ? script.title_variants : [],\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];\n"
+        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nfunction stripTrailingSlash(s) {\n  return s.endsWith('/') ? s.slice(0, -1) : s;\n}\n\nconst config = loadConfig();\nconst hostRoot = stripTrailingSlash(String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube'));\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = stripTrailingSlash(String(config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'));\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst NL = String.fromCharCode(10);\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\n// Hashtags: prefer LLM hashtags, else derive. Strip '#', dedupe, always include shorts.\nlet hashtags = Array.isArray(script.hashtags) && script.hashtags.length\n  ? script.hashtags.slice()\n  : ['shorts', theme, langTag, 'kids', 'story'];\nhashtags = hashtags\n  .map((h) => String(h).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').trim().split(' ').filter(Boolean).join(''))\n  .filter(Boolean)\n  .map((h) => h.toLowerCase());\nif (!hashtags.includes('shorts')) hashtags.push('shorts');\nhashtags = Array.from(new Set(hashtags)).slice(0, 6);\nconst hashtagLine = hashtags.slice(0, 5).map((h) => '#' + h).join(' ');\n\nfunction buildUploadTitle(base, allTags, maxChars, hashtagCount) {\n  let titleBase = String(base || '').trim();\n  if (titleBase.includes('#')) return titleBase.slice(0, maxChars);\n  const titleTags = allTags.slice(0, hashtagCount);\n  if (!titleTags.length) return titleBase.slice(0, maxChars);\n  const suffix = ' ' + titleTags.map((h) => '#' + h).join(' ');\n  const maxBase = maxChars - suffix.length;\n  if (maxBase <= 10) return titleBase.slice(0, maxChars);\n  if (titleBase.length > maxBase) titleBase = titleBase.slice(0, maxBase - 1).trim() + '…';\n  return (titleBase + suffix).slice(0, maxChars);\n}\n\n// Title: LLM SEO title (often already includes hashtags) or base title + first LLM hashtags.\nconst titleHashtagCount = 2;\nconst titleMaxChars = 100;\nlet title = buildUploadTitle(\n  script.youtube_title || script.title || ('Kids ' + theme + ' - ' + langTag),\n  hashtags,\n  titleMaxChars,\n  titleHashtagCount,\n);\nif (title.length > titleMaxChars) title = title.slice(0, titleMaxChars - 1).trim() + '…';\n\n// Description: prefer LLM SEO description, else narration. Append hashtags. Cap ~4900 chars.\nconst narration = script.narration || script.script || '';\nconst descBody = String(script.youtube_description || narration || '').trim();\nlet description = (descBody + NL + NL + hashtagLine).trim();\nif (description.length > 4900) description = description.slice(0, 4900);\n\n// Tags: prefer LLM SEO tags, else derive. Sanitize, dedupe, obey YouTube ~500-char total budget.\nlet tagList = Array.isArray(script.youtube_tags) && script.youtube_tags.length\n  ? script.youtube_tags.slice()\n  : [theme, 'kids', 'story', 'shorts', 'hindi', 'cartoon'];\ntagList = tagList\n  .map((t) => String(t).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').split(',').join('').trim().split(' ').filter(Boolean).join(' '))\n  .filter(Boolean)\n  .map((t) => t.toLowerCase());\ntagList = Array.from(new Set(tagList));\nconst cappedTags = [];\nlet tagChars = 0;\nfor (const t of tagList) {\n  const add = (cappedTags.length ? 1 : 0) + t.length;\n  if (tagChars + add > 480) break;\n  cappedTags.push(t);\n  tagChars += add;\n  if (cappedTags.length >= 15) break;\n}\nconst tags = cappedTags.join(',');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || (stripTrailingSlash(apiBase) + '/video/' + result.run_id);\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags,\n    hashtags: hashtagLine,\n    hookText: String(script.hook_text || ''),\n    titleVariants: Array.isArray(script.title_variants) ? script.title_variants : [],\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];\n"
       },
-      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "id": "8011e7c8-bf28-43a1-aac1-257341a7ecd6",
       "name": "Parse Pipeline Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2900,
-        200
+        42368,
+        12176
       ]
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "={{ $json.video_url }}",
         "options": {
           "response": {
@@ -328,13 +327,13 @@
           "timeout": 600000
         }
       },
-      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "id": "d2ff8ce9-3f1b-45e9-bb3a-98dd6322048b",
       "name": "Fetch Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3140,
-        200
+        42608,
+        12176
       ]
     },
     {
@@ -343,24 +342,29 @@
         "operation": "upload",
         "title": "={{ $('Parse Pipeline Result').item.json.title }}",
         "regionCode": "AE",
-        "categoryId": "Entertainment",
-        "binaryPropertyName": "data",
+        "categoryId": "24",
         "options": {
           "description": "={{ $('Parse Pipeline Result').item.json.description }}",
+          "notifySubscribers": true,
           "privacyStatus": "={{ $('Parse Pipeline Result').item.json.youtubePrivacy }}",
-          "tags": "={{ $('Parse Pipeline Result').item.json.tags }}",
           "selfDeclaredMadeForKids": false,
-          "notifySubscribers": true
+          "tags": "={{ $('Parse Pipeline Result').item.json.tags }}"
         }
       },
-      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "id": "c3f9ce67-89b4-4269-aaab-8865ae533a97",
       "name": "Upload to YouTube",
       "type": "n8n-nodes-base.youTube",
       "typeVersion": 1,
       "position": [
-        3380,
-        200
-      ]
+        42848,
+        12176
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "LM5QCmwOeJLruJaV",
+          "name": "YouTube account"
+        }
+      }
     },
     {
       "parameters": {
@@ -400,18 +404,19 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0009-4000-8000-000000000009",
+      "id": "e171cd6d-f2f4-471e-bd67-5f08cc65b0ca",
       "name": "Upload Complete",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3620,
-        200
+        43088,
+        12176
       ]
     }
   ],
+  "pinData": {},
   "connections": {
-    "Schedule 5\u00d7 Daily": {
+    "Schedule 5× Daily": {
       "main": [
         [
           {
@@ -588,14 +593,18 @@
       ]
     }
   },
-  "pinData": {},
+  "active": false,
   "settings": {
     "executionOrder": "v1",
-    "saveManualExecutions": true
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "staticData": null,
-  "tags": [],
+  "versionId": "f7251c7a-c171-48b8-a284-d6027fee2d84",
   "meta": {
-    "templateCredsSetupCompleted": false
-  }
+    "templateCredsSetupCompleted": true,
+    "instanceId": "97d7d72d970549b3444644222e55071d7e4d1da402333c03e56e65ba4e6752ae"
+  },
+  "nodeGroups": [],
+  "id": "aZiWQMXEh6FOBNpz",
+  "tags": []
 }

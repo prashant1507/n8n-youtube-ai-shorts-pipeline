@@ -40,6 +40,7 @@ from .run_io import (
 )
 from .script_generator import generate_script
 from .story_registry import register_story
+from .theme_profiles import resolve_voice_from_script
 from .theme_rotation import commit_serial_theme
 
 logger = logging.getLogger(__name__)
@@ -158,11 +159,13 @@ def run_stage(
         from .tts import generate_voice, unload_model as unload_tts
 
         progress("voice", 0.20, "Generating voice...")
+        voice_description = resolve_voice_from_script(script, config.voice.description)
         generate_voice(
             narration,
             config,
             voice_path,
             scene_segments=narration_segments(scenes),
+            description=voice_description,
         )
         unload_tts()
         release_gpu_memory()
@@ -325,11 +328,18 @@ def run_pipeline(
         narration = script["narration"]
         scenes = script["scenes"]
         music_prompt = script.get("music_prompt", config.music.prompt)
+        voice_description = resolve_voice_from_script(script, config.voice.description)
 
         from .tts import generate_voice, unload_model as unload_tts
 
-        progress("voice", 0.20, "Generating Divya voice...")
-        generate_voice(narration, config, voice_path, scene_segments=narration_segments(scenes))
+        progress("voice", 0.20, "Generating voice (Mary/Rani)...")
+        generate_voice(
+            narration,
+            config,
+            voice_path,
+            scene_segments=narration_segments(scenes),
+            description=voice_description,
+        )
         unload_tts()
 
         from .music import generate_music, unload_model as unload_music

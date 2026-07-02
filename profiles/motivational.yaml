@@ -2,6 +2,7 @@
 # Theme key = filename without .yaml (or override with id:)
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
+# Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
 
 role_en: motivational speaker writing a short narrated video script
 role_hi: प्रेरणादायक speaker जो छोटा narrated video script लिखता है
@@ -12,4 +13,16 @@ instruction_hi: एक नया, उत्साहवर्धक संदे
 structure_en: Hook → short example story → one-sentence takeaway.
 structure_hi: शुरुआत में ध्यान खींचो → छोटी उदाहरण कहानी → एक पंक्ति का संदेश।
 visual_style: Inspiring cinematic illustration, golden warm light, hopeful mood, no text
+voice_en: >-
+  Mary speaks with a light, high-pitched, upbeat voice — bright and encouraging, not deep or solemn.
+  Airy, positive tone with an easy moderate pace.
+  Friendly inspiration for young listeners.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
+voice_hi: >-
+  Rani speaks with a light, high-pitched, upbeat voice — bright and encouraging, not deep or solemn.
+  Speak in clear, natural Hindi with an airy, positive tone and easy moderate pace.
+  Friendly inspiration for young listeners.
+  Very clear audio, close recording.
+  RULE: Full text should be in audio.
 music: Uplifting soft orchestral, hopeful and warm, no vocals
