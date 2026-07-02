@@ -1,5 +1,7 @@
 # n8n YouTube Shorts Pipeline
 
+**Live channel:** [@ShortSpark123a Shorts](https://www.youtube.com/@ShortSpark123a/shorts)
+
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-MPS-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![n8n](https://img.shields.io/badge/n8n-workflow-EA4B71?style=flat&logo=n8n&logoColor=white)](https://n8n.io/)
