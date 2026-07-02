@@ -9,7 +9,7 @@
 [![LLM](https://img.shields.io/badge/LLM-OpenAI%20compatible-412991?style=flat&logo=openai&logoColor=white)](https://lmstudio.ai/)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat&logo=huggingface&logoColor=black)](https://huggingface.co/)
 [![Diffusers](https://img.shields.io/badge/Diffusers-0.38+-121212?style=flat&logo=huggingface&logoColor=white)](https://huggingface.co/docs/diffusers)
-[![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Mary%2FRani-2563EB?style=flat&logo=googleassistant&logoColor=white)](https://huggingface.co/ai4bharat/indic-parler-tts)
+[![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Divya%2FRani-2563EB?style=flat&logo=googleassistant&logoColor=white)](https://huggingface.co/ai4bharat/indic-parler-tts)
 [![Wan](https://img.shields.io/badge/Wan-2.2%20optional-6366F1?style=flat&logo=apple&logoColor=white)](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)
 
 **Live channel:** [@ShortSpark123a](https://www.youtube.com/@ShortSpark123a/shorts)
@@ -20,7 +20,7 @@ final MP4. Built for **Apple Silicon (MPS)** with optional **n8n** scheduling an
 Runs fully local except for the LLM (LM Studio) and Hugging Face model downloads.
 
 ```
-LM Studio (story)  →  Parler-TTS (Mary / Rani)  →  MusicGen
+LM Studio (story)  →  Parler-TTS (Divya / Rani)  →  MusicGen
                               ↓
                     FLUX.2 Klein images  →  Ken Burns or Wan clips
                               ↓
@@ -30,7 +30,7 @@ LM Studio (story)  →  Parler-TTS (Mary / Rani)  →  MusicGen
 ## Features
 
 - **Story generation** — theme profiles (`profiles/*.yaml`), duplicate-title avoidance, optional LLM quality reviewer
-- **Voice** — [indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts): **Mary** (English), **Rani** (Hindi);
+- **Voice** — [indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts): **Divya** (English), **Rani** (Hindi);
   delivery adapts per theme in `profiles/*.yaml`
 - **Music** — MusicGen instrumental bed, mixed under narration
 - **Visual tiers**
@@ -223,7 +223,7 @@ Each run creates a folder under `output/{run_id}/`:
 | Stage       | Artifact                            | Description                     |
 |-------------|-------------------------------------|---------------------------------|
 | `script`    | `script.json`                       | Title, narration, scene prompts |
-| `voice`     | `voice.wav`                         | Parler-TTS (Mary / Rani)        |
+| `voice`     | `voice.wav`                         | Parler-TTS (Divya / Rani)       |
 | `music`     | `music.wav`                         | MusicGen background             |
 | `images`    | `images/scene_*.png`                | FLUX Klein (skipped for `wan`)  |
 | `clips`     | `clips/scene_*.mp4`                 | Ken Burns or Wan                |
@@ -267,7 +267,7 @@ All defaults live in **`default.yaml`** (validated by Pydantic in `src/config.py
 | Section  | Key settings                                                               |
 |----------|----------------------------------------------------------------------------|
 | `themes` | Content types; each has a prompt profile in `profiles/`                    |
-| `voice`  | Parler-TTS model + per-theme voice descriptions (Mary / Rani)              |
+| `voice`  | Parler-TTS model + per-theme voice descriptions (Divya / Rani)             |
 | `music`  | MusicGen model, prompt, mix volume                                         |
 | `video`  | Tier, resolution, FLUX/Wan model paths, Ken Burns motion                   |
 | `llm`    | LM Studio URL, model name, quality reviewer (`min_score`, `max_revisions`) |

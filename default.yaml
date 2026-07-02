@@ -50,9 +50,9 @@ themes:
 
 
 voice:
-  # Parler-TTS voice description — English fallback (Mary); Hindi uses profile voice_hi (Rani).
+  # Parler-TTS voice description — English fallback (Divya); Hindi uses profile voice_hi (Rani).
   description: >-
-    Mary speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
+    Divya speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.
     Soft, breezy storytelling tone like a cheerful kids' show host.
     Easy flowing pace with short natural pauses.
     Light expressiveness, gentle and fun for young children.

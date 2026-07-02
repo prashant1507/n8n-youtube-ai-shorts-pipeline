@@ -332,7 +332,7 @@ def run_pipeline(
 
         from .tts import generate_voice, unload_model as unload_tts
 
-        progress("voice", 0.20, "Generating voice (Mary/Rani)...")
+        progress("voice", 0.20, "Generating voice (Divya/Rani)...")
         generate_voice(
             narration,
             config,

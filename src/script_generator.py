@@ -168,7 +168,7 @@ def _story_system_prompt(config: PipelineConfig) -> str:
 
     task_key = "task_hi" if lang == "hindi" else "task_en"
     default_task = (
-        "Write a script that will be READ ALOUD by a TTS narrator (Mary for English, Rani for Hindi). "
+        "Write a script that will be READ ALOUD by a TTS narrator (Divya for English, Rani for Hindi). "
         "Invent something completely original — your own characters, setting, and plot. "
         "Do NOT retell famous stories, fairy tales, movies, or existing IP."
     )

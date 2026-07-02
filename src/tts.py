@@ -1,4 +1,4 @@
-"""Text-to-speech using indic-parler-tts (Mary for English, Rani for Hindi)."""
+"""Text-to-speech using indic-parler-tts (Divya for English, Rani for Hindi)."""
 
 from __future__ import annotations
 
