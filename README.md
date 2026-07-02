@@ -228,8 +228,8 @@ Built-in themes include: story, joke, bedtime, fantasy, adventure, dragons, hind
 **Configure Job** (n8n) theme priority:
 
 1. Fixed `theme` → use that type
-2. Empty/`auto` + `themesCsv` → random from CSV
-3. Empty/`auto` → random from `default.yaml` list
+2. Empty/`auto` + `themesCsv` → serial rotation through CSV (state in `records/theme_rotation.json`)
+3. Empty/`auto` → serial rotation through `default.yaml` `themes:` list (wraps after last)
 
 ---
 

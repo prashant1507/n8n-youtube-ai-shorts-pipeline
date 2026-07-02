@@ -40,6 +40,7 @@ from .run_io import (
 )
 from .script_generator import generate_script
 from .story_registry import register_story
+from .theme_rotation import commit_serial_theme
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,7 @@ def run_stage(
         (out / "theme.txt").write_text(config.theme, encoding="utf-8")
         script = generate_script(config)
         save_script(out, script)
+        commit_serial_theme(config.themes, expected_theme=config.theme)
         _register_script(script, config, out.name)
         apply_subtitle_policy(config, script)
         return _stage_result("script", out)
@@ -308,6 +310,7 @@ def run_pipeline(
             script = generate_script(config)
         save_script(out, script)
         if not script_override and not skip_llm:
+            commit_serial_theme(config.themes, expected_theme=config.theme)
             _register_script(script, config, out.name)
 
         narration = script["narration"]
@@ -426,7 +429,7 @@ def main() -> None:
             prev = config.theme.strip().lower()
             config.theme = resolve_theme(config.theme or None, config)
             if not prev or prev == "auto":
-                logger.info("Random theme selected: %s", config.theme)
+                logger.info("Serial theme selected: %s", config.theme)
         result = run_stage(
             args.stage,
             config,
@@ -437,7 +440,7 @@ def main() -> None:
         prev = config.theme.strip().lower()
         config.theme = resolve_theme(config.theme or None, config)
         if not prev or prev == "auto":
-            logger.info("Random theme selected: %s", config.theme)
+            logger.info("Serial theme selected: %s", config.theme)
         result = run_pipeline(config)
     payload = json.dumps(result, indent=2)
     sys.stdout.write(payload + "\n")

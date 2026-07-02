@@ -155,8 +155,8 @@ Set these in the **Configure Job** node before each run (or leave defaults for s
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `lang` | yes | `en` | Narration language: `en` (English) or `hi` (Hindi). Hindi disables on-screen subtitles. |
-| `theme` | no | *(empty)* | Fixed content type for this run (e.g. `bedtime`, `joke`, `fantasy`). Leave empty or set `auto` to pick at random. Ignored when you want random from `themesCsv` only — leave `theme` empty. |
-| `themesCsv` | no | *(empty)* | Comma-separated list used **only when `theme` is empty or `auto`**. Example: `story,joke,bedtime,friendship,fantasy`. Overrides the `themes:` list in `default.yaml` for that run. Useful when n8n cannot read your project files or you want a custom subset per workflow. |
+| `theme` | no | *(empty)* | Fixed content type (e.g. `bedtime`). Leave empty or `auto` for **serial rotation** through the theme pool. |
+| `themesCsv` | no | *(empty)* | Comma-separated rotation pool when `theme` is empty. Overrides `themes:` in `default.yaml` for that workflow. |
 | `duration` | no | `60` | Target video length in seconds (10–120). Actual voice length may vary slightly. |
 | `tier` | no | `flux` | Visual tier: `flux` (FLUX.2 Klein images + Ken Burns) or `wan` (Wan2.2 short clips via mlxgen; needs more RAM). |
 | `youtubePrivacy` | no | `public` | YouTube upload visibility: `private`, `unlisted`, or `public`. |
@@ -167,8 +167,10 @@ Set these in the **Configure Job** node before each run (or leave defaults for s
 ### Theme selection priority
 
 1. **`theme` set** (e.g. `bedtime`) → always use that theme
-2. **`theme` empty / `auto` + `themesCsv` set** → random pick from the CSV list
-3. **`theme` empty / `auto` + no `themesCsv`** → random pick from `themes:` in `default.yaml`
+2. **`theme` empty / `auto` + `themesCsv` set** → serial rotation through the CSV list
+3. **`theme` empty / `auto` + no `themesCsv`** → serial rotation through `themes:` in `default.yaml`
+
+Rotation state is saved in `records/theme_rotation.json`. After the last theme, the next run wraps to the first. If a script step fails and retries, the **same** theme is reused until the script succeeds.
 
 Example **Configure Job** for rotating kids content in English:
 

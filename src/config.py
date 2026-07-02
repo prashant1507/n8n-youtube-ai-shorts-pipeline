@@ -13,22 +13,17 @@ ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = ROOT / "default.yaml"
 
 
-def pick_random_theme(config: PipelineConfig) -> str:
-    import random
-
-    pool = [t.strip().lower() for t in config.themes if t and str(t).strip()]
-    if not pool:
-        raise ValueError(
-            "No themes configured. Add a themes: list in default.yaml or pass --themes-csv."
-        )
-    return random.choice(pool)
-
-
-def resolve_theme(theme: str | None, config: PipelineConfig) -> str:
-    """Use explicit theme, or pick one at random when empty / 'auto'."""
+def resolve_theme(theme: str | None, config: "PipelineConfig") -> str:
+    """Use explicit theme, or the next theme in serial rotation when empty / 'auto'."""
     key = (theme or "").strip().lower()
     if not key or key == "auto":
-        return pick_random_theme(config)
+        from .theme_rotation import allocate_serial_theme
+
+        chosen, _, _ = allocate_serial_theme(config.themes)
+        return chosen
+    from .theme_rotation import clear_pending
+
+    clear_pending()
     return key
 
 
@@ -109,7 +104,7 @@ def require_theme(config: PipelineConfig) -> str:
     if not theme:
         hint = ", ".join(config.themes[:4]) if config.themes else "story, joke, bedtime, …"
         raise ValueError(
-            "Content type is required. Pass --theme on CLI, omit for random, "
+            "Content type is required. Pass --theme on CLI, omit for serial rotation, "
             f"or add themes in default.yaml (e.g. {hint})."
         )
     return theme
