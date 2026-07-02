@@ -56,7 +56,88 @@ Optional: **Docker n8n** for scheduled runs and YouTube OAuth upload.
 
 ## Quick start
 
-### 1. Clone and create virtual environments
+### 1. Hugging Face login and model downloads
+
+Models are pulled from the [Hugging Face Hub](https://huggingface.co/). Do this once before your first pipeline run.
+
+Start with **account + gated access** below (no install needed). **CLI login and downloads** use the venvs from Step 2.
+
+#### Create an account and token
+
+1. Sign up at [huggingface.co](https://huggingface.co/join).
+2. Open **Settings → [Access Tokens](https://huggingface.co/settings/tokens)**.
+3. Create a token with **Read** access (fine-grained or classic both work).
+
+#### Log in with the Hugging Face CLI
+
+From **flux-venv** (create it in Step 2 first):
+
+```bash
+source flux-venv/bin/activate
+pip install -U "huggingface_hub[cli]"
+
+hf auth login
+# Paste your token when prompted, or:
+# hf auth login --token hf_xxxxxxxxxxxxxxxx
+
+hf auth whoami
+deactivate
+```
+
+You only need to log in once per machine (token is saved under `~/.cache/huggingface/`).
+
+Alternatively, set `HF_TOKEN` or `HUGGING_FACE_HUB_TOKEN` in your shell before running the pipeline.
+
+#### Request access to gated model repos
+
+Some models require accepting a license on the Hub **before** download works. Log into the website, open each repo, and click **Agree and access repository** (wording may vary):
+
+| Model | Hub repo | Gated? |
+|-------|----------|--------|
+| Parler-TTS (voice) | [ai4bharat/indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts) | No |
+| MusicGen (music) | [facebook/musicgen-small](https://huggingface.co/facebook/musicgen-small) | No |
+| FLUX.2 Klein (images) | [black-forest-labs/FLUX.2-klein-4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) | **Yes** |
+| Wan 2.2 (optional video) | [Wan-AI/Wan2.2-TI2V-5B-Diffusers](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers) | Check repo page |
+
+Wait until access is approved (usually instant for FLUX). If `hf download` returns **403 Forbidden**, you are not logged in or have not accepted the license yet.
+
+#### Download models
+
+Pre-downloading avoids long waits on the first run. Cache location: `~/.cache/huggingface/hub/` (~15–20 GB for flux tier; Wan adds more).
+
+**Voice + music** (flux-venv):
+
+```bash
+source flux-venv/bin/activate
+hf download ai4bharat/indic-parler-tts
+hf download facebook/musicgen-small
+deactivate
+```
+
+**FLUX.2 Klein images** (image-venv) — **required** when `flux_local_files_only: true` in `default.yaml` (default):
+
+```bash
+source image-venv/bin/activate
+pip install -U "huggingface_hub[cli]"
+hf auth login   # skip if already logged in from flux-venv
+
+hf download black-forest-labs/FLUX.2-klein-4B
+deactivate
+```
+
+**Wan tier** (optional) — `mlxgen prepare` downloads after Hub login:
+
+```bash
+source wan-venv/bin/activate
+hf auth login   # skip if already logged in
+
+mlxgen prepare --model Wan-AI/Wan2.2-TI2V-5B-Diffusers --path models/wan2.2-ti2v-5b -q 8
+deactivate
+```
+
+If you skip pre-download, TTS and MusicGen still fetch on first use. FLUX **will not** auto-download while `flux_local_files_only` is `true` — run `hf download black-forest-labs/FLUX.2-klein-4B` first, or set `flux_local_files_only: false` in `default.yaml` to allow online fetch (slower first run).
+
+### 2. Clone and create virtual environments
 
 ```bash
 git clone https://github.com/YOUR_USER/n8n-youtube.git
@@ -80,17 +161,15 @@ python3.12 -m venv wan-venv
 source wan-venv/bin/activate
 pip install mlx-gen pydantic pyyaml
 deactivate
-
-source wan-venv/bin/activate
-mlxgen prepare --model Wan-AI/Wan2.2-TI2V-5B-Diffusers --path models/wan2.2-ti2v-5b -q 8
-deactivate
 ```
 
-### 2. Start LM Studio
+Then complete **Step 1** (HF login + model downloads) before your first run.
+
+### 3. Start LM Studio
 
 Load a chat model (e.g. Llama 3.1 8B Instruct) and enable the local server on port **1234**.
 
-### 3. Generate a video
+### 4. Generate a video
 
 ```bash
 source flux-venv/bin/activate
@@ -101,7 +180,7 @@ python -m src.pipeline --theme bedtime --lang en --duration 45 --tier flux
 
 Output lands in `output/YYYYMMDD_HHMMSS_xxxxxx/final.mp4` (or `final_subtitled.mp4`).
 
-### 4. Run the n8n API (optional)
+### 5. Run the n8n API (optional)
 
 ```bash
 ./scripts/start-n8n-api.sh

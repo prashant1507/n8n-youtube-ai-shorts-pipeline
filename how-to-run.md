@@ -27,6 +27,90 @@ pip install mlx-gen
 deactivate
 ```
 
+## Hugging Face login and model downloads
+
+Models are pulled from the [Hugging Face Hub](https://huggingface.co/). Do this once before your first pipeline run.
+
+### 1. Create an account and token
+
+1. Sign up at [huggingface.co](https://huggingface.co/join).
+2. Open **Settings → [Access Tokens](https://huggingface.co/settings/tokens)**.
+3. Create a token with **Read** access (fine-grained or classic both work).
+
+### 2. Log in with the Hugging Face CLI
+
+From **flux-venv** (includes `huggingface-hub`):
+
+```bash
+source flux-venv/bin/activate
+pip install -U "huggingface_hub[cli]"
+
+hf auth login
+# Paste your token when prompted, or:
+# hf auth login --token hf_xxxxxxxxxxxxxxxx
+
+hf auth whoami
+deactivate
+```
+
+You only need to log in once per machine (token is saved under `~/.cache/huggingface/`).
+
+Alternatively, set `HF_TOKEN` or `HUGGING_FACE_HUB_TOKEN` in your shell before running the pipeline.
+
+### 3. Request access to gated model repos
+
+Some models require accepting a license on the Hub **before** download works. Log into the website, open each repo, and
+click **Agree and access repository** (wording may vary):
+
+| Model                    | Hub repo                                                                                      | Gated?          |
+|--------------------------|-----------------------------------------------------------------------------------------------|-----------------|
+| Parler-TTS (voice)       | [ai4bharat/indic-parler-tts](https://huggingface.co/ai4bharat/indic-parler-tts)               | No              |
+| MusicGen (music)         | [facebook/musicgen-small](https://huggingface.co/facebook/musicgen-small)                     | No              |
+| FLUX.2 Klein (images)    | [black-forest-labs/FLUX.2-klein-4B](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) | **Yes**         |
+| Wan 2.2 (optional video) | [Wan-AI/Wan2.2-TI2V-5B-Diffusers](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)     | Check repo page |
+
+Wait until access is approved (usually instant for FLUX). If `hf download` returns **403 Forbidden**, you are not logged
+in or have not accepted the license yet.
+
+### 4. Download models
+
+Pre-downloading avoids long waits on the first run. Cache location: `~/.cache/huggingface/hub/` (~15–20 GB for flux
+tier; Wan adds more).
+
+**Voice + music** (flux-venv):
+
+```bash
+source flux-venv/bin/activate
+hf download ai4bharat/indic-parler-tts
+hf download facebook/musicgen-small
+deactivate
+```
+
+**FLUX.2 Klein images** (image-venv) — **required** when `flux_local_files_only: true` in `default.yaml` (default):
+
+```bash
+source image-venv/bin/activate
+pip install -U "huggingface_hub[cli]"
+hf auth login   # skip if already logged in from flux-venv
+
+hf download black-forest-labs/FLUX.2-klein-4B
+deactivate
+```
+
+**Wan tier** (optional) — `mlxgen prepare` downloads after Hub login:
+
+```bash
+source wan-venv/bin/activate
+hf auth login   # skip if already logged in
+
+mlxgen prepare --model Wan-AI/Wan2.2-TI2V-5B-Diffusers --path models/wan2.2-ti2v-5b -q 8
+deactivate
+```
+
+If you skip pre-download, TTS and MusicGen still fetch on first use. FLUX **will not** auto-download while
+`flux_local_files_only` is `true` — run `hf download black-forest-labs/FLUX.2-klein-4B` first, or set
+`flux_local_files_only: false` in `default.yaml` to allow online fetch (slower first run).
+
 Start the n8n API (uses `flux-venv/bin/python`):
 
 ```bash
@@ -36,7 +120,8 @@ Start the n8n API (uses `flux-venv/bin/python`):
 ## flux tier (`flux-venv` + `image-venv`)
 
 The **full pipeline** runs from `flux-venv` (TTS, music, orchestration).  
-**FLUX.2 Klein** images run in a separate `image-venv` subprocess (transformers 5 — incompatible with parler-tts in flux-venv). If `image-venv` is missing, create it with the steps above.
+**FLUX.2 Klein** images run in a separate `image-venv` subprocess (transformers 5 — incompatible with parler-tts in
+flux-venv). If `image-venv` is missing, create it with the steps above.
 
 Run the pipeline:
 
@@ -51,15 +136,18 @@ Optional in `default.yaml`: `flux_python: ""` (empty = auto-detect `image-venv` 
 
 ## wan tier (`flux-venv` + prepared model)
 
-Wan video uses `wan-venv/bin/mlxgen` automatically. Run the **full pipeline from flux-venv** (parler-tts breaks in wan-venv).
+Wan video uses `wan-venv/bin/mlxgen` automatically. Run the **full pipeline from flux-venv** (parler-tts breaks in
+wan-venv).
 
-**Memory:** Wan 2.2 5B needs several GB of free unified memory. If the process dies with `zsh: killed`, macOS ran out of RAM — the pipeline now runs Wan in an **isolated subprocess** after TTS/music unload. Close other apps, or resume only the video stage:
+**Memory:** Wan 2.2 5B needs several GB of free unified memory. If the process dies with `zsh: killed`, macOS ran out of
+RAM — the pipeline now runs Wan in an **isolated subprocess** after TTS/music unload. Close other apps, or resume only
+the video stage:
 
 ```bash
 python -m src.pipeline --video-only --from-run output/YYYYMMDD_HHMMSS_xxx --tier wan --lang hi
 ```
 
-One-time model prep:
+One-time model prep (requires Hugging Face login — see **Hugging Face login and model downloads** above):
 
 ```bash
 source wan-venv/bin/activate
@@ -75,18 +163,18 @@ python -m src.pipeline --theme story --lang en --duration 45 --tier wan
 
 ## CLI flags
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--theme` | no | Content type from `themes` in `default.yaml`; omit or `auto` = random |
-| `--themes-csv` | no | Comma-separated themes for random pick (overrides `default.yaml` list) |
-| `--lang` | no | `en` or `hi` (default from config) |
-| `--duration` | no | Video duration in seconds, 10–120 (default from config) |
-| `--tier` | no | `flux` or `wan` (default from config) |
-| `--config` | no | Path to YAML config (default: `default.yaml`) |
-| `--no-subtitles` | no | Skip bottom subtitles |
-| `--video-only` | no | Regenerate video only; requires `--from-run` |
-| `--from-run` | with `--video-only` or `--stage` | Existing output folder |
-| `--stage` | no | Run one stage only: `script`, `voice`, `music`, `images`, `clips`, `video`, `subtitles`, `audio_mix`, `final` |
+| Flag             | Required                         | Description                                                                                                   |
+|------------------|----------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `--theme`        | no                               | Content type from `themes` in `default.yaml`; omit or `auto` = random                                         |
+| `--themes-csv`   | no                               | Comma-separated themes for random pick (overrides `default.yaml` list)                                        |
+| `--lang`         | no                               | `en` or `hi` (default from config)                                                                            |
+| `--duration`     | no                               | Video duration in seconds, 10–120 (default from config)                                                       |
+| `--tier`         | no                               | `flux` or `wan` (default from config)                                                                         |
+| `--config`       | no                               | Path to YAML config (default: `default.yaml`)                                                                 |
+| `--no-subtitles` | no                               | Skip bottom subtitles                                                                                         |
+| `--video-only`   | no                               | Regenerate video only; requires `--from-run`                                                                  |
+| `--from-run`     | with `--video-only` or `--stage` | Existing output folder                                                                                        |
+| `--stage`        | no                               | Run one stage only: `script`, `voice`, `music`, `images`, `clips`, `video`, `subtitles`, `audio_mix`, `final` |
 
 ```bash
 python -m src.pipeline --video-only --from-run output/YYYYMMDD_HHMMSS_xxx --tier flux
@@ -101,17 +189,17 @@ python -m src.pipeline --video-only --from-run output/YYYYMMDD_HHMMSS_xxx --tier
 
 The workflow runs **one HTTP step per pipeline stage** via `POST /step`:
 
-| n8n node | API stage | Output |
-|----------|-----------|--------|
-| Generate Script | `script` | `run_id`, `script.json` |
-| Generate Voice | `voice` | `voice.wav` |
-| Generate Music | `music` | `music.wav` |
-| Generate Images | `images` | FLUX PNGs (skipped for `tier=wan`) |
-| Generate Clips | `clips` | Ken Burns or Wan scene MP4s |
-| Assemble Video | `video` | `video_raw.mp4` |
-| Add Subtitles | `subtitles` | burned subs (skipped for Hindi) |
-| Mix Audio | `audio_mix` | `audio_mixed.wav` |
-| Final Video | `final` | `final.mp4` |
+| n8n node        | API stage   | Output                             |
+|-----------------|-------------|------------------------------------|
+| Generate Script | `script`    | `run_id`, `script.json`            |
+| Generate Voice  | `voice`     | `voice.wav`                        |
+| Generate Music  | `music`     | `music.wav`                        |
+| Generate Images | `images`    | FLUX PNGs (skipped for `tier=wan`) |
+| Generate Clips  | `clips`     | Ken Burns or Wan scene MP4s        |
+| Assemble Video  | `video`     | `video_raw.mp4`                    |
+| Add Subtitles   | `subtitles` | burned subs (skipped for Hindi)    |
+| Mix Audio       | `audio_mix` | `audio_mixed.wav`                  |
+| Final Video     | `final`     | `final.mp4`                        |
 
 Legacy one-shot: `POST /generate` still works (full pipeline in one call).
 
@@ -119,14 +207,16 @@ Legacy one-shot: `POST /generate` still works (full pipeline in one call).
 
 n8n **Retry On Fail** is capped at **5000 ms** (5 seconds) — it cannot wait 30 minutes between tries.
 
-Retries are handled by the **pipeline API** instead. On failure, each `POST /step` is retried up to 3 times with a 30-minute wait (defaults in `scripts/start-n8n-api.sh`):
+Retries are handled by the **pipeline API** instead. On failure, each `POST /step` is retried up to 3 times with a
+30-minute wait (defaults in `scripts/start-n8n-api.sh`):
 
-| Env var | Default | Meaning |
-|---------|---------|---------|
-| `N8N_STEP_MAX_TRIES` | `3` | Total attempts per step (1 run + 2 retries) |
-| `N8N_STEP_RETRY_WAIT_SEC` | `1800` | Seconds to wait between retries (30 min) |
+| Env var                   | Default | Meaning                                     |
+|---------------------------|---------|---------------------------------------------|
+| `N8N_STEP_MAX_TRIES`      | `3`     | Total attempts per step (1 run + 2 retries) |
+| `N8N_STEP_RETRY_WAIT_SEC` | `1800`  | Seconds to wait between retries (30 min)    |
 
-Leave n8n node **Retry On Fail** off (or at 5000 ms for quick network blips only — do not combine with API retries unless you want multiplied attempts).
+Leave n8n node **Retry On Fail** off (or at 5000 ms for quick network blips only — do not combine with API retries
+unless you want multiplied attempts).
 
 Restart the API after changing env vars: `kill $(lsof -ti :8765) && ./scripts/start-n8n-api.sh`
 
@@ -136,33 +226,36 @@ n8n **does not** allow Read/Write File on all of `/home/node/.n8n`. By default o
 
 `/home/node/.n8n-files`
 
-So mounting `n8n_data:/home/node/.n8n` is correct for n8n settings/credentials, but **videos under `/pipeline` are still blocked** unless you do one of:
+So mounting `n8n_data:/home/node/.n8n` is correct for n8n settings/credentials, but **videos under `/pipeline` are still
+blocked** unless you do one of:
 
-| Approach | Setup |
-|----------|--------|
-| **Recommended — HTTP (current workflow)** | No extra mount. **Fetch Video** downloads from `GET http://host.docker.internal:8765/video/{run_id}`. |
-| **Mount into `.n8n-files`** | Add to `docker-compose.yml`: `- /path/to/n8n-youtube/output:/home/node/.n8n-files/youtube_videos:ro` and set `pipelineContainerPath` to `/home/node/.n8n-files/youtube_videos`. |
-| **Allow `/pipeline`** | Add env `N8N_RESTRICT_FILE_ACCESS: /home/node/.n8n-files:/pipeline` (less strict). |
+| Approach                                  | Setup                                                                                                                                                                           |
+|-------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Recommended — HTTP (current workflow)** | No extra mount. **Fetch Video** downloads from `GET http://host.docker.internal:8765/video/{run_id}`.                                                                           |
+| **Mount into `.n8n-files`**               | Add to `docker-compose.yml`: `- /path/to/n8n-youtube/output:/home/node/.n8n-files/youtube_videos:ro` and set `pipelineContainerPath` to `/home/node/.n8n-files/youtube_videos`. |
+| **Allow `/pipeline`**                     | Add env `N8N_RESTRICT_FILE_ACCESS: /home/node/.n8n-files:/pipeline` (less strict).                                                                                              |
 
-See `n8n/docker-compose.example.yml`. Remove the unused `./out:/out` mount — this project writes to `output/`, not `out/`.
+See `n8n/docker-compose.example.yml`. Remove the unused `./out:/out` mount — this project writes to `output/`, not
+`out/`.
 
-Keep `- /path/to/n8n-youtube:/pipeline:ro` only if you need to browse the whole project from n8n; upload still uses **Fetch Video** + API.
+Keep `- /path/to/n8n-youtube:/pipeline:ro` only if you need to browse the whole project from n8n; upload still uses *
+*Fetch Video** + API.
 
 ### Configure Job inputs
 
 Set these in the **Configure Job** node before each run (or leave defaults for scheduled runs).
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `lang` | yes | `en` | Narration language: `en` (English) or `hi` (Hindi). Hindi disables on-screen subtitles. |
-| `theme` | no | *(empty)* | Fixed content type (e.g. `bedtime`). Leave empty or `auto` for **serial rotation** through the theme pool. |
-| `themesCsv` | no | *(empty)* | Comma-separated rotation pool when `theme` is empty. Overrides `themes:` in `default.yaml` for that workflow. |
-| `duration` | no | `60` | Target video length in seconds (10–120). Actual voice length may vary slightly. |
-| `tier` | no | `flux` | Visual tier: `flux` (FLUX.2 Klein images + Ken Burns) or `wan` (Wan2.2 short clips via mlxgen; needs more RAM). |
-| `youtubePrivacy` | no | `public` | YouTube upload visibility: `private`, `unlisted`, or `public`. |
-| `pipelineApiBase` | no | `http://host.docker.internal:8765` | Pipeline API base URL (no `/generate` suffix). Steps call `POST {base}/step`. Use `http://127.0.0.1:8765` if n8n runs on the same Mac as the API. |
-| `pipelineHostPath` | no | *(project root)* | Host project root (path mapping in Parse Pipeline Result). Set to your clone path, e.g. `/Users/user/Desktop/workspace/n8n-youtube`. |
-| `pipelineContainerPath` | no | `/home/node/.n8n-files/youtube_videos` | Container path for `output/` runs when using the optional youtube_videos mount. Upload uses **Fetch Video** (HTTP), not disk read. |
+| Variable                | Required | Default                                | Description                                                                                                                                       |
+|-------------------------|----------|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `lang`                  | yes      | `en`                                   | Narration language: `en` (English) or `hi` (Hindi). Hindi disables on-screen subtitles.                                                           |
+| `theme`                 | no       | *(empty)*                              | Fixed content type (e.g. `bedtime`). Leave empty or `auto` for **serial rotation** through the theme pool.                                        |
+| `themesCsv`             | no       | *(empty)*                              | Comma-separated rotation pool when `theme` is empty. Overrides `themes:` in `default.yaml` for that workflow.                                     |
+| `duration`              | no       | `60`                                   | Target video length in seconds (10–120). Actual voice length may vary slightly.                                                                   |
+| `tier`                  | no       | `flux`                                 | Visual tier: `flux` (FLUX.2 Klein images + Ken Burns) or `wan` (Wan2.2 short clips via mlxgen; needs more RAM).                                   |
+| `youtubePrivacy`        | no       | `public`                               | YouTube upload visibility: `private`, `unlisted`, or `public`.                                                                                    |
+| `pipelineApiBase`       | no       | `http://host.docker.internal:8765`     | Pipeline API base URL (no `/generate` suffix). Steps call `POST {base}/step`. Use `http://127.0.0.1:8765` if n8n runs on the same Mac as the API. |
+| `pipelineHostPath`      | no       | *(project root)*                       | Host project root (path mapping in Parse Pipeline Result). Set to your clone path, e.g. `/Users/user/Desktop/workspace/n8n-youtube`.              |
+| `pipelineContainerPath` | no       | `/home/node/.n8n-files/youtube_videos` | Container path for `output/` runs when using the optional youtube_videos mount. Upload uses **Fetch Video** (HTTP), not disk read.                |
 
 ### Theme selection priority
 
@@ -170,7 +263,8 @@ Set these in the **Configure Job** node before each run (or leave defaults for s
 2. **`theme` empty / `auto` + `themesCsv` set** → serial rotation through the CSV list
 3. **`theme` empty / `auto` + no `themesCsv`** → serial rotation through `themes:` in `default.yaml`
 
-Rotation state is saved in `records/theme_rotation.json`. After the last theme, the next run wraps to the first. If a script step fails and retries, the **same** theme is reused until the script succeeds.
+Rotation state is saved in `records/theme_rotation.json`. After the last theme, the next run wraps to the first. If a
+script step fails and retries, the **same** theme is reused until the script succeeds.
 
 Example **Configure Job** for rotating kids content in English:
 
@@ -182,8 +276,6 @@ duration: 60
 tier: flux
 youtubePrivacy: public
 ```
-
-
 
 ### You do manually
 
@@ -201,7 +293,8 @@ youtubePrivacy: public
    python3.12 -m venv image-venv && source image-venv/bin/activate && pip install -r requirements-image.txt && deactivate
    ```
 
-   Pipeline scripts use `flux-venv/bin/python` directly (not `source activate`), so they keep working after a move once the venv is recreated.
+   Pipeline scripts use `flux-venv/bin/python` directly (not `source activate`), so they keep working after a move once
+   the venv is recreated.
 
 3. **Docker n8n** — update `docker-compose.yml` mounts:
    ```yaml
