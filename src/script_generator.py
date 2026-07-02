@@ -15,6 +15,13 @@ from typing import Any
 from openai import OpenAI
 
 from .config import PipelineConfig
+from .llm_common import (
+    language_label,
+    parse_llm_json,
+    target_scene_count,
+    theme_key,
+    word_target,
+)
 from .theme_profiles import resolve_theme_profile
 from .visual_prompts import LLM_IMAGE_STYLE
 from .quality_agent import refine_image_prompts, refine_story
@@ -28,12 +35,9 @@ from .story_registry import (
 logger = logging.getLogger(__name__)
 
 
-def _theme_key(theme: str) -> str:
-    return theme.lower().strip().replace(" ", "_")
-
-
 def _theme_profile(config: PipelineConfig) -> dict[str, str]:
     return resolve_theme_profile(config.theme)
+
 
 STORY_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -55,38 +59,6 @@ IMAGE_PROMPTS_SCHEMA: dict[str, Any] = {
     "required": ["image_prompts"],
     "additionalProperties": False,
 }
-
-
-def _language_label(config: PipelineConfig) -> str:
-    return "hindi" if config.language.lower().startswith("hi") else "english"
-
-
-def _word_target(duration_sec: int) -> tuple[int, int]:
-    """~90–110 wpm for slow Divya narration."""
-    lo = max(8, int(duration_sec * 90 / 60))
-    hi = max(lo + 5, int(duration_sec * 110 / 60))
-    return lo, hi
-
-
-def _target_scene_count(config: PipelineConfig) -> int:
-    """Scenes per clip; shorter videos use fewer scenes."""
-    n = config.video.scenes_count or 6
-    # ~4s per scene for wan, ~8s for flux slideshow
-    sec_per_scene = 4 if config.video.tier.lower() == "wan" else 8
-    by_duration = max(2, min(10, round(config.duration_sec / sec_per_scene)))
-    return max(2, min(10, n, by_duration))
-
-
-def _parse_response(raw: str) -> dict[str, Any] | None:
-    try:
-        clean = raw.strip()
-        if clean.startswith("```"):
-            clean = re.sub(r"^```(?:json)?\n?|```$", "", clean, flags=re.MULTILINE).strip()
-        clean = clean.replace("\n", " ").replace("\r", "")
-        result = json.loads(clean)
-        return result if isinstance(result, dict) else None
-    except json.JSONDecodeError:
-        return None
 
 
 def _extract_message_content(message: Any) -> str:
@@ -119,7 +91,7 @@ def _resolve_model(client: OpenAI, config: PipelineConfig) -> str:
 
 
 def _protagonist_name_rules(config: PipelineConfig) -> str:
-    lang = _language_label(config)
+    lang = language_label(config)
     avoid = recent_protagonist_names(lang, limit=12)
     if lang == "hindi":
         lines = [
@@ -144,11 +116,11 @@ def _protagonist_name_rules(config: PipelineConfig) -> str:
 
 
 def _story_system_prompt(config: PipelineConfig) -> str:
-    lang = _language_label(config)
-    lo, hi = _word_target(config.duration_sec)
+    lang = language_label(config)
+    lo, hi = word_target(config.duration_sec)
     profile = _theme_profile(config)
     role = profile["role_hi"] if lang == "hindi" else profile["role_en"]
-    content_type = _theme_key(config.theme)
+    content_type = theme_key(config.theme)
     structure = profile.get("structure_hi" if lang == "hindi" else "structure_en", "")
 
     lang_rules = (
@@ -197,8 +169,8 @@ def _story_system_prompt(config: PipelineConfig) -> str:
 
 def _story_user_prompt(config: PipelineConfig) -> str:
     profile = _theme_profile(config)
-    content_type = _theme_key(config.theme)
-    lang = _language_label(config)
+    content_type = theme_key(config.theme)
+    lang = language_label(config)
     instruction = profile["instruction_hi"] if lang == "hindi" else profile["instruction_en"]
 
     return (
@@ -212,7 +184,7 @@ def _story_user_prompt(config: PipelineConfig) -> str:
 
 
 def _image_prompts_system(config: PipelineConfig) -> str:
-    scene_count = _target_scene_count(config)
+    scene_count = target_scene_count(config)
     profile = _theme_profile(config)
     visual_style = profile.get("visual_style", LLM_IMAGE_STYLE)
     return (
@@ -256,7 +228,7 @@ def _image_prompts_system(config: PipelineConfig) -> str:
 
 
 def _image_prompts_user(config: PipelineConfig, script: str) -> str:
-    scene_count = _target_scene_count(config)
+    scene_count = target_scene_count(config)
     return (
         f"Storyboard exactly {scene_count} illustrations for this narration.\n"
         "Scene 1: clear establishing shot — define every main character with a detailed fixed physical description.\n"
@@ -297,7 +269,7 @@ def _llm_json_call(
             )
             message = response.choices[0].message
             raw = _extract_message_content(message)
-            parsed = _parse_response(raw)
+            parsed = parse_llm_json(raw)
             if parsed:
                 logger.info("LLM returned valid JSON on attempt %d", attempt)
                 return parsed
@@ -317,7 +289,7 @@ def _llm_json_call(
         ],
     )
     raw = _extract_message_content(response.choices[0].message)
-    parsed = _parse_response(raw)
+    parsed = parse_llm_json(raw)
     if parsed:
         return parsed
     raise RuntimeError(f"LLM failed to return valid JSON: {last_error}")
@@ -395,8 +367,8 @@ def _default_music_prompt(config: PipelineConfig) -> str:
 
 
 def _story_retry_addon(config: PipelineConfig, rejected_titles: list[str]) -> str:
-    avoid = recent_titles(_theme_key(config.theme), _language_label(config), limit=8)
-    avoid_names = recent_protagonist_names(_language_label(config), limit=12)
+    avoid = recent_titles(theme_key(config.theme), language_label(config), limit=8)
+    avoid_names = recent_protagonist_names(language_label(config), limit=12)
     lines = [
         "\n\n### REJECTED — already generated ###",
         "The story you just wrote matches one we already produced.",
@@ -418,8 +390,8 @@ def _generate_unique_story(
     config: PipelineConfig,
 ) -> tuple[str, str]:
     """Step 1 with dedup — retry LLM if story already exists in records/."""
-    content_type = _theme_key(config.theme)
-    lang = _language_label(config)
+    content_type = theme_key(config.theme)
+    lang = language_label(config)
     rejected: list[str] = []
 
     for attempt in range(1, MAX_UNIQUE_RETRIES + 1):
@@ -460,10 +432,10 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
     """Two-step generation: LLM invents content from content-type theme."""
     client = OpenAI(base_url=config.llm.base_url, api_key="lm-studio")
     model = _resolve_model(client, config)
-    lang = _language_label(config)
-    content_type = _theme_key(config.theme)
+    lang = language_label(config)
+    content_type = theme_key(config.theme)
 
-    logger.info("Generating content type: %s (%d scenes)", content_type, _target_scene_count(config))
+    logger.info("Generating content type: %s (%d scenes)", content_type, target_scene_count(config))
 
     # Step 1: title + script (deduplicated via records/)
     title, script_text = _generate_unique_story(client, model, config)
@@ -471,7 +443,7 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
     logger.info("Generated [%s]: %s (%d chars)", content_type, title, len(script_text))
 
     # Step 2: image prompts (English, no names, physical anchors, chronological)
-    scene_count = _target_scene_count(config)
+    scene_count = target_scene_count(config)
     prompts_result = _llm_json_call(
         client, model, config,
         _image_prompts_system(config),

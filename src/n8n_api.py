@@ -12,8 +12,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from .run_io import OUTPUT_DIR
+
 ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = ROOT / "output"
 SCRIPT = ROOT / "scripts" / "run-pipeline-for-n8n.sh"
 STEP_SCRIPT = ROOT / "scripts" / "run-pipeline-step.sh"
 HOST = os.environ.get("N8N_API_HOST", "0.0.0.0")

@@ -8,28 +8,14 @@ import subprocess
 from pathlib import Path
 
 from .config import ROOT, PipelineConfig
+from .venv_paths import flux_python
 from .visual_prompts import prepare_scene_prompts
 
 logger = logging.getLogger(__name__)
 
-def _flux_python(config: PipelineConfig) -> Path:
-    configured = (config.video.flux_python or "").strip()
-    if configured:
-        p = Path(configured).expanduser()
-        if p.is_file():
-            return p
-        py = p / "bin" / "python"
-        if py.is_file():
-            return py
-        raise RuntimeError(f"video.flux_python not found: {configured}")
 
-    local = ROOT / "image-venv" / "bin" / "python"
-    if local.is_file():
-        return local
-    raise RuntimeError(
-        "FLUX.2 Klein Python not found. Create image-venv with requirements-image.txt "
-        f"to create {ROOT / 'image-venv'}, or set video.flux_python in default.yaml."
-    )
+def _flux_python(config: PipelineConfig) -> Path:
+    return flux_python(config)
 
 
 def _scene_prompts_for_flux(scenes: list[dict]) -> list[str]:

@@ -10,6 +10,7 @@ from typing import Any
 from openai import OpenAI
 
 from .config import PipelineConfig
+from .llm_common import language_label, parse_llm_json, target_scene_count, theme_key, word_target
 from .story_registry import recent_protagonist_names, recent_titles
 from .theme_profiles import resolve_theme_profile
 
@@ -47,39 +48,6 @@ IMAGE_PROMPTS_SCHEMA: dict[str, Any] = {
     "required": ["image_prompts"],
     "additionalProperties": False,
 }
-
-
-def _language_label(config: PipelineConfig) -> str:
-    return "hindi" if config.language.lower().startswith("hi") else "english"
-
-
-def _theme_key(theme: str) -> str:
-    return theme.lower().strip().replace(" ", "_")
-
-
-def _word_target(duration_sec: int) -> tuple[int, int]:
-    lo = max(8, int(duration_sec * 90 / 60))
-    hi = max(lo + 5, int(duration_sec * 110 / 60))
-    return lo, hi
-
-
-def _scene_count(config: PipelineConfig) -> int:
-    n = config.video.scenes_count or 6
-    sec_per_scene = 4 if config.video.tier.lower() == "wan" else 8
-    by_duration = max(2, min(10, round(config.duration_sec / sec_per_scene)))
-    return max(2, min(10, n, by_duration))
-
-
-def _parse_json(raw: str) -> dict[str, Any] | None:
-    try:
-        clean = raw.strip()
-        if clean.startswith("```"):
-            clean = re.sub(r"^```(?:json)?\n?|```$", "", clean, flags=re.MULTILINE).strip()
-        clean = clean.replace("\n", " ").replace("\r", "")
-        result = json.loads(clean)
-        return result if isinstance(result, dict) else None
-    except Exception:
-        return None
 
 
 def _extract_content(message: Any) -> str:
@@ -122,7 +90,7 @@ def _llm_json(
                 },
             )
             raw = _extract_content(response.choices[0].message)
-            parsed = _parse_json(raw)
+            parsed = parse_llm_json(raw)
             if parsed:
                 return parsed
         except Exception as exc:
@@ -137,7 +105,7 @@ def _llm_json(
             {"role": "user", "content": user},
         ],
     )
-    parsed = _parse_json(_extract_content(response.choices[0].message))
+    parsed = parse_llm_json(_extract_content(response.choices[0].message))
     if parsed:
         return parsed
     raise RuntimeError(f"Quality agent LLM failed: {last_error}")
@@ -145,14 +113,14 @@ def _llm_json(
 
 def _story_context(config: PipelineConfig) -> str:
     profile = resolve_theme_profile(config.theme)
-    lang = _language_label(config)
-    lo, hi = _word_target(config.duration_sec)
+    lang = language_label(config)
+    lo, hi = word_target(config.duration_sec)
     instruction = profile["instruction_hi"] if lang == "hindi" else profile["instruction_en"]
     structure = profile.get("structure_hi" if lang == "hindi" else "structure_en", "")
     avoid_names = recent_protagonist_names(lang, limit=12)
-    avoid_titles = recent_titles(_theme_key(config.theme), lang, limit=8)
+    avoid_titles = recent_titles(theme_key(config.theme), lang, limit=8)
     lines = [
-        f"Content type: {_theme_key(config.theme)}",
+        f"Content type: {theme_key(config.theme)}",
         f"Language: {lang}",
         f"Target length: {lo}-{hi} words (~{config.duration_sec}s narration)",
         f"Tone: {config.tone}",
@@ -201,8 +169,8 @@ def _revise_story(
     script: str,
     verdict: dict[str, Any],
 ) -> tuple[str, str]:
-    lang = _language_label(config)
-    lo, hi = _word_target(config.duration_sec)
+    lang = language_label(config)
+    lo, hi = word_target(config.duration_sec)
     issues = verdict.get("issues") or []
     system = (
         "You are a children's script editor. Fix the script based on the review issues.\n"
@@ -284,10 +252,10 @@ def _validate_image_prompts(
     image_prompts: list[str],
 ) -> dict[str, Any]:
     profile = resolve_theme_profile(config.theme)
-    expected = _scene_count(config)
+    expected = target_scene_count(config)
     numbered = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(image_prompts))
     user = (
-        f"Content type: {_theme_key(config.theme)}\n"
+        f"Content type: {theme_key(config.theme)}\n"
         f"Visual style: {profile.get('visual_style', '')}\n"
         f"Expected prompt count: {expected}\n\n"
         f"STORY:\n{script}\n\n"
@@ -305,7 +273,7 @@ def _revise_image_prompts(
     image_prompts: list[str],
     verdict: dict[str, Any],
 ) -> list[str]:
-    expected = _scene_count(config)
+    expected = target_scene_count(config)
     profile = resolve_theme_profile(config.theme)
     issues = verdict.get("issues") or []
     system = (
@@ -360,7 +328,7 @@ def refine_image_prompts(
             logger.warning("Accepting image prompts after %d quality revision(s)", q.max_revisions)
             return prompts
         revised = _revise_image_prompts(client, model, config, script, prompts, verdict)
-        if len(revised) >= _scene_count(config):
+        if len(revised) >= target_scene_count(config):
             prompts = revised
         else:
             logger.warning("Revision returned too few prompts; keeping previous set")

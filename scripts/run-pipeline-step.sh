@@ -14,10 +14,13 @@ TIER="${6:-flux}"
 THEMES_CSV="${7:-}"
 
 export TOKENIZERS_PARALLELISM=false
-# shellcheck source=/dev/null
-source flux-venv/bin/activate
+PYTHON="$ROOT/flux-venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+  echo '{"error": "flux-venv not found — run: python3.12 -m venv flux-venv && pip install -r requirements.txt"}' >&2
+  exit 1
+fi
 
-CMD=(python -m src.pipeline --stage "$STAGE")
+CMD=("$PYTHON" -m src.pipeline --stage "$STAGE")
 
 if [[ -n "$RUN_ID" ]]; then
   CMD+=(--from-run "$ROOT/output/$RUN_ID")

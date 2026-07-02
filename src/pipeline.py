@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -17,8 +18,8 @@ from .assembler import (
     list_scene_clips,
     subtitles_on_clips_stage,
 )
+from .clips import generate_clips
 from .config import (
-    ROOT,
     PipelineConfig,
     apply_subtitle_policy,
     is_hindi_language,
@@ -26,75 +27,21 @@ from .config import (
     require_theme,
     resolve_theme,
 )
-from .story_registry import register_story
+from .media import probe_duration
 from .memory import release_gpu_memory
+from .run_io import (
+    OUTPUT_DIR,
+    load_script,
+    narration_segments,
+    persist_aligned_scenes,
+    resolve_run_dir,
+    save_script,
+    sync_config_from_script,
+)
 from .script_generator import generate_script
+from .story_registry import register_story
 
 logger = logging.getLogger(__name__)
-OUTPUT_DIR = ROOT / "output"
-
-
-def _run_wan_subprocess(
-    output_dir: Path,
-    config: PipelineConfig,
-    config_path: str | None = None,
-) -> list[Path]:
-    """Run Wan one scene per wan-venv subprocess to limit peak unified memory."""
-    import subprocess
-
-    from .video_wan import _wan_python
-
-    release_gpu_memory()
-    python = _wan_python(config)
-    script = json.loads((output_dir / "script.json").read_text(encoding="utf-8"))
-    scene_count = len(script.get("scenes") or [])
-    if scene_count == 0:
-        raise ValueError(f"No scenes in {output_dir / 'script.json'}")
-
-    clips: list[Path] = []
-    for i in range(scene_count):
-        release_gpu_memory()
-        cmd = [
-            str(python),
-            "-m", "src.wan_worker",
-            "--output-dir", str(output_dir),
-            "--scene-index", str(i),
-        ]
-        if config_path:
-            cmd.extend(["--config", config_path])
-        logger.info("Wan scene %d/%d in wan-venv subprocess...", i + 1, scene_count)
-        result = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
-        if result.returncode != 0:
-            msg = (result.stderr or result.stdout or "").strip()
-            raise RuntimeError(f"Wan worker scene {i + 1} failed: {msg}")
-        payload = json.loads(result.stdout)
-        clips.extend(Path(p) for p in payload["clips"])
-    return clips
-
-
-def _run_flux_subprocess(
-    output_dir: Path,
-    config: PipelineConfig,
-    config_path: str | None = None,
-) -> list[Path]:
-    """Run FLUX + Ken Burns in image-venv so only one heavy Python process holds the model."""
-    import subprocess
-
-    from .video_flux import _flux_python
-
-    release_gpu_memory()
-    python = _flux_python(config)
-    cmd = [str(python), "-m", "src.flux_worker", "--output-dir", str(output_dir)]
-    if config_path:
-        cmd.extend(["--config", config_path])
-    logger.info("Starting FLUX worker in image-venv (frees flux-venv TTS/music memory)...")
-    result = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
-    if result.returncode != 0:
-        msg = (result.stderr or result.stdout or "").strip()
-        raise RuntimeError(f"FLUX worker failed: {msg}")
-    payload = json.loads(result.stdout)
-    return [Path(p) for p in payload["clips"]]
-
 
 ProgressCallback = Callable[[str, float, str], None]
 
@@ -111,39 +58,6 @@ PIPELINE_STAGES = (
 )
 
 
-def _resolve_output_dir(run_id: str | None, output_dir: Path | None) -> Path:
-    if output_dir is not None:
-        out = output_dir.resolve()
-        out.mkdir(parents=True, exist_ok=True)
-        return out
-    if not run_id:
-        raise ValueError("run_id or output_dir is required for pipeline steps after script")
-    out = (OUTPUT_DIR / Path(run_id).name).resolve()
-    if not str(out).startswith(str(OUTPUT_DIR.resolve())):
-        raise ValueError("invalid run_id")
-    if not out.is_dir():
-        raise FileNotFoundError(f"Run folder not found: {out}")
-    return out
-
-
-def _load_script(out: Path) -> dict:
-    script_path = out / "script.json"
-    if not script_path.exists():
-        raise FileNotFoundError(f"No script.json in {out}")
-    return json.loads(script_path.read_text(encoding="utf-8"))
-
-
-def _sync_config_from_script(config: PipelineConfig, script: dict) -> None:
-    if script.get("content_type") or script.get("theme"):
-        config.theme = str(script.get("content_type") or script.get("theme"))
-    lang = str(script.get("language", config.language)).lower()
-    if lang.startswith("hi"):
-        config.language = "hi"
-    elif lang.startswith("en"):
-        config.language = "en"
-    apply_subtitle_policy(config, script)
-
-
 def _stage_result(
     stage: str,
     out: Path,
@@ -157,9 +71,8 @@ def _stage_result(
         "output_dir": str(out),
         "skipped": skipped,
     }
-    script_path = out / "script.json"
-    if script_path.exists():
-        script = json.loads(script_path.read_text(encoding="utf-8"))
+    if (out / "script.json").is_file():
+        script = load_script(out)
         payload["script"] = script
         payload["lang"] = script.get("language", "")
         payload["theme"] = script.get("content_type") or script.get("theme", "")
@@ -174,8 +87,7 @@ def _stage_result(
     ):
         path = out / name
         if path.is_file():
-            key = name.replace(".", "_").replace("-", "_")
-            payload[key] = str(path)
+            payload[name.replace(".", "_").replace("-", "_")] = str(path)
     final = out / "final_subtitled.mp4"
     if not final.is_file():
         final = out / "final.mp4"
@@ -184,6 +96,20 @@ def _stage_result(
     if extra:
         payload.update(extra)
     return payload
+
+
+def _default_progress(stage: str, pct: float, msg: str) -> None:
+    logger.info("[%s %.0f%%] %s", stage, pct * 100, msg)
+
+
+def _register_script(script: dict, config: PipelineConfig, run_id: str) -> None:
+    register_story(
+        script.get("narration") or script.get("script", ""),
+        script.get("title", ""),
+        script.get("content_type") or script.get("theme", config.theme),
+        script.get("language", config.language),
+        run_id,
+    )
 
 
 def run_stage(
@@ -205,7 +131,7 @@ def run_stage(
             run_id = datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:6]
             out = OUTPUT_DIR / run_id
         else:
-            out = _resolve_output_dir(run_id, output_dir)
+            out = resolve_run_dir(run_id, output_dir)
         out.mkdir(parents=True, exist_ok=True)
 
         progress("script", 0.05, "Generating narration script...")
@@ -213,20 +139,14 @@ def run_stage(
         logger.info("Content type: %s", theme)
         (out / "theme.txt").write_text(config.theme, encoding="utf-8")
         script = generate_script(config)
-        (out / "script.json").write_text(json.dumps(script, indent=2, ensure_ascii=False))
-        register_story(
-            script.get("narration") or script.get("script", ""),
-            script.get("title", ""),
-            script.get("content_type") or script.get("theme", config.theme),
-            script.get("language", config.language),
-            out.name,
-        )
+        save_script(out, script)
+        _register_script(script, config, out.name)
         apply_subtitle_policy(config, script)
         return _stage_result("script", out)
 
-    out = _resolve_output_dir(run_id, output_dir)
-    script = _load_script(out)
-    _sync_config_from_script(config, script)
+    out = resolve_run_dir(run_id, output_dir)
+    script = load_script(out)
+    sync_config_from_script(config, script)
     scenes = script["scenes"]
     voice_path = out / "voice.wav"
     music_path = out / "music.wav"
@@ -236,12 +156,11 @@ def run_stage(
         from .tts import generate_voice, unload_model as unload_tts
 
         progress("voice", 0.20, "Generating voice...")
-        segments = [s.get("narration_segment", "") for s in scenes]
         generate_voice(
             narration,
             config,
             voice_path,
-            scene_segments=segments if len(segments) > 1 else None,
+            scene_segments=narration_segments(scenes),
         )
         unload_tts()
         release_gpu_memory()
@@ -253,28 +172,18 @@ def run_stage(
         from .music import generate_music, unload_model as unload_music
 
         progress("music", 0.40, "Generating background music...")
-        import subprocess
-
-        voice_dur = float(
-            subprocess.check_output(
-                ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", str(voice_path)],
-                text=True,
-            ).strip()
-        )
         music_prompt = script.get("music_prompt", config.music.prompt)
-        generate_music(music_prompt, voice_dur + 2, config, music_path)
+        generate_music(music_prompt, probe_duration(voice_path) + 2, config, music_path)
         unload_music()
         release_gpu_memory()
         return _stage_result("music", out)
 
-    scenes = _align_scene_durations(scenes, voice_path)
-    (out / "script.json").write_text(json.dumps({**script, "scenes": scenes}, indent=2, ensure_ascii=False))
+    scenes = persist_aligned_scenes(out, script, voice_path)
 
     if stage == "images":
         if not voice_path.exists():
             raise FileNotFoundError(f"Missing {voice_path} — run voice stage first")
-        tier = config.video.tier.lower()
-        if tier == "wan":
+        if config.video.tier.lower() == "wan":
             logger.info("Wan tier: images stage skipped (Wan generates clips directly)")
             return _stage_result("images", out, skipped=True, extra={"reason": "wan tier"})
         from .video_flux import generate_images
@@ -289,18 +198,7 @@ def run_stage(
             raise FileNotFoundError(f"Missing {voice_path} — run voice stage first")
         tier = config.video.tier.lower()
         progress("clips", 0.60, f"Generating scene clips ({tier})...")
-        if tier == "wan":
-            try:
-                clip_paths = _run_wan_subprocess(out, config)
-            except Exception as exc:
-                logger.warning("Wan2.2 failed (%s), falling back to FLUX slideshow", exc)
-                clip_paths = _run_flux_subprocess(out, config)
-        else:
-            from .video_flux import generate_clips_from_images
-
-            if not any((out / "images").glob("scene_*.png")):
-                raise FileNotFoundError("No scene images — run images stage first")
-            clip_paths = generate_clips_from_images(scenes, config, out)
+        clip_paths = generate_clips(out, config, scenes, flux_subprocess=False)
         release_gpu_memory()
         return _stage_result("clips", out, extra={"clips": [str(p) for p in clip_paths]})
 
@@ -350,12 +248,14 @@ def run_stage(
         if not video_path.is_file():
             raise FileNotFoundError("Missing video_raw.mp4 — run video stage first")
         progress("final", 0.95, "Muxing final video...")
-        voice_dur = _probe_duration(voice_path)
-        final_path = final_mux_stage(video_path, out / "audio_mixed.wav", out, voice_duration=voice_dur)
+        final_path = final_mux_stage(
+            video_path,
+            out / "audio_mixed.wav",
+            out,
+            voice_duration=probe_duration(voice_path),
+        )
         if config.subtitles and not is_hindi_language(str(script.get("language", config.language))):
             subtitled = out / "final_subtitled.mp4"
-            import subprocess
-
             subprocess.run(
                 ["ffmpeg", "-y", "-i", str(final_path), "-c", "copy", str(subtitled)],
                 check=True,
@@ -366,34 +266,6 @@ def run_stage(
         return _stage_result("final", out, extra={"final_video": str(final_path)})
 
     raise ValueError(f"Unhandled stage: {stage}")
-
-
-def _probe_duration(path: Path) -> float:
-    import subprocess
-
-    return float(
-        subprocess.check_output(
-            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
-            text=True,
-        ).strip()
-    )
-
-
-def _align_scene_durations(scenes: list[dict], voice_path: Path) -> list[dict]:
-    """Scale per-scene duration_sec to match actual voice length."""
-    total_voice = _probe_duration(voice_path)
-    weights = [max(1, len(s.get("narration_segment", ""))) for s in scenes]
-    weight_sum = sum(weights) or len(scenes)
-    aligned = []
-    for scene, weight in zip(scenes, weights):
-        s = dict(scene)
-        s["duration_sec"] = round(total_voice * weight / weight_sum, 1)
-        aligned.append(s)
-    return aligned
-
-
-def _default_progress(stage: str, pct: float, msg: str) -> None:
-    logger.info("[%s %.0f%%] %s", stage, pct * 100, msg)
 
 
 def run_pipeline(
@@ -418,83 +290,54 @@ def run_pipeline(
             raise FileNotFoundError(f"No script.json in {out}")
         if not voice_path.exists() or not music_path.exists():
             raise FileNotFoundError(f"Missing voice.wav or music.wav in {out}")
-        script = json.loads((out / "script.json").read_text())
+        script = load_script(out)
         scenes = script["scenes"]
         if not config.theme:
             config.theme = script.get("content_type") or script.get("theme", "story")
     else:
-        # Stage 1: Script
         progress("script", 0.05, "Generating narration script...")
         if script_override:
             script = script_override
         elif skip_llm and (out / "script.json").exists():
-            script = json.loads((out / "script.json").read_text())
+            script = load_script(out)
         else:
             theme = require_theme(config)
             logger.info("Content type: %s", theme)
             progress("script", 0.05, f"Content type: {theme} — LLM inventing story...")
             (out / "theme.txt").write_text(config.theme, encoding="utf-8")
             script = generate_script(config)
-        (out / "script.json").write_text(json.dumps(script, indent=2, ensure_ascii=False))
+        save_script(out, script)
         if not script_override and not skip_llm:
-            register_story(
-                script.get("narration") or script.get("script", ""),
-                script.get("title", ""),
-                script.get("content_type") or script.get("theme", config.theme),
-                script.get("language", config.language),
-                out.name,
-            )
+            _register_script(script, config, out.name)
 
         narration = script["narration"]
         scenes = script["scenes"]
         music_prompt = script.get("music_prompt", config.music.prompt)
 
-        # Stage 2: Voice (Divya profile from config)
         from .tts import generate_voice, unload_model as unload_tts
 
         progress("voice", 0.20, "Generating Divya voice...")
-        segments = [s.get("narration_segment", "") for s in scenes]
-        generate_voice(narration, config, voice_path, scene_segments=segments if len(segments) > 1 else None)
+        generate_voice(narration, config, voice_path, scene_segments=narration_segments(scenes))
         unload_tts()
 
-        # Stage 3: Music
         from .music import generate_music, unload_model as unload_music
 
         progress("music", 0.40, "Generating background music...")
-        import subprocess
-
-        voice_dur = float(
-            subprocess.check_output(
-                ["ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", str(voice_path)],
-                text=True,
-            ).strip()
-        )
-        generate_music(music_prompt, voice_dur + 2, config, music_path)
+        generate_music(music_prompt, probe_duration(voice_path) + 2, config, music_path)
         unload_music()
         release_gpu_memory()
 
     apply_subtitle_policy(config, script)
-    if not config.subtitles and is_hindi_language(
-        str(script.get("language", config.language))
-    ):
+    if not config.subtitles and is_hindi_language(str(script.get("language", config.language))):
         logger.info("Hindi language: subtitles disabled")
 
-    scenes = _align_scene_durations(scenes, voice_path)
+    scenes = persist_aligned_scenes(out, script, voice_path)
     release_gpu_memory()
 
-    # Stage 4: Video
     tier = config.video.tier.lower()
     progress("video", 0.55, f"Generating story images + clips ({tier})...")
-    if tier == "wan":
-        try:
-            clips = _run_wan_subprocess(out, config)
-        except Exception as exc:
-            logger.warning("Wan2.2 failed (%s), falling back to FLUX slideshow", exc)
-            clips = _run_flux_subprocess(out, config)
-    else:
-        clips = _run_flux_subprocess(out, config)
+    clips = generate_clips(out, config, scenes, flux_subprocess=True)
 
-    # Stage 5: Assembly
     progress("assembly", 0.85, "Assembling final video...")
     final = assemble_pipeline_output(clips, voice_path, music_path, scenes, config, out)
 
@@ -599,7 +442,6 @@ def main() -> None:
     payload = json.dumps(result, indent=2)
     sys.stdout.write(payload + "\n")
     sys.stdout.flush()
-    # PyTorch MPS can SIGSEGV during interpreter shutdown after TTS/music; skip teardown for n8n.
     os._exit(0)
 
 

@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import subprocess
 from pathlib import Path
 
 from .config import PipelineConfig
+from .media import probe_duration
 from .subtitles import save_subtitle_overlay_png, write_srt
 
 logger = logging.getLogger(__name__)
@@ -18,18 +18,6 @@ def _run(cmd: list[str], cwd: str | None = None) -> None:
     result = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
     if result.returncode != 0:
         raise RuntimeError(result.stderr or result.stdout)
-
-
-def _probe_duration(path: Path) -> float:
-    cmd = [
-        "ffprobe", "-v", "quiet",
-        "-print_format", "json",
-        "-show_format",
-        str(path),
-    ]
-    out = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    data = json.loads(out.stdout)
-    return float(data["format"]["duration"])
 
 
 def concat_clips(clips: list[Path], output_path: Path, crossfade_sec: float = 0.5) -> Path:
@@ -58,7 +46,7 @@ def mix_audio(
     music_volume: float = 0.20,
 ) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    voice_dur = _probe_duration(voice_path)
+    voice_dur = probe_duration(voice_path)
     _run([
         "ffmpeg", "-y",
         "-i", str(voice_path),
@@ -79,7 +67,7 @@ def assemble_final(
     voice_duration: float | None = None,
 ) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    dur = voice_duration or _probe_duration(audio_path)
+    dur = voice_duration or probe_duration(audio_path)
     _run([
         "ffmpeg", "-y",
         "-i", str(video_path),

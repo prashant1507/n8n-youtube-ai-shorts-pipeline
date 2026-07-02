@@ -9,6 +9,8 @@ import subprocess
 from pathlib import Path
 
 from .config import ROOT, PipelineConfig
+from .media import probe_duration
+from .venv_paths import wan_python
 
 logger = logging.getLogger(__name__)
 
@@ -18,20 +20,14 @@ WAN_GEN_FRAMES = 13  # ~1.6s clip; extended to scene duration after generation
 
 
 def _wan_python(config: PipelineConfig) -> Path:
-    local = ROOT / "wan-venv" / "bin" / "python"
-    if local.is_file():
-        return local
-    raise RuntimeError(
-        "Wan Python not found. Create wan-venv with mlx-gen installed "
-        f"(expected {local})."
-    )
+    return wan_python(config)
 
 
 def _extend_clip_to_duration(clip_path: Path, target_sec: float) -> Path:
     """Loop/slow a short Wan clip to match scene narration duration."""
     if target_sec <= 0:
         return clip_path
-    src_dur = _probe_duration(clip_path)
+    src_dur = probe_duration(clip_path)
     if src_dur >= target_sec * 0.95:
         return clip_path
     # Slow playback to fill target duration (smoother than hard loop)
@@ -52,17 +48,6 @@ def _extend_clip_to_duration(clip_path: Path, target_sec: float) -> Path:
         raise RuntimeError(f"ffmpeg extend failed: {(result.stderr or result.stdout).strip()}")
     tmp.replace(clip_path)
     return clip_path
-
-
-def _probe_duration(path: Path) -> float:
-    cmd = [
-        "ffprobe", "-v", "quiet",
-        "-show_entries", "format=duration",
-        "-of", "csv=p=0",
-        str(path),
-    ]
-    out = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    return float(out.stdout.strip())
 
 
 def _mlxgen_bin() -> Path | None:
@@ -154,7 +139,7 @@ def generate_clip(
             raise FileNotFoundError(f"Wan clip not created at {output_path}")
 
     _extend_clip_to_duration(output_path, duration_hint)
-    logger.info("Wan clip ready: %s (%.1fs)", output_path.name, _probe_duration(output_path))
+    logger.info("Wan clip ready: %s (%.1fs)", output_path.name, probe_duration(output_path))
     return output_path
 
 

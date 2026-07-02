@@ -17,12 +17,13 @@ if [[ "$LANG" != "en" && "$LANG" != "hi" ]]; then
 fi
 
 export TOKENIZERS_PARALLELISM=false
+PYTHON="$ROOT/flux-venv/bin/python"
+if [[ ! -x "$PYTHON" ]]; then
+  echo '{"error": "flux-venv not found — run: python3.12 -m venv flux-venv && pip install -r requirements.txt"}' >&2
+  exit 1
+fi
 
-# Full pipeline uses flux-venv (TTS + optional wan via mlxgen subprocess)
-# shellcheck source=/dev/null
-source flux-venv/bin/activate
-
-CMD=(python -m src.pipeline --lang "$LANG" --duration "$DURATION" --tier "$TIER")
+CMD=("$PYTHON" -m src.pipeline --lang "$LANG" --duration "$DURATION" --tier "$TIER")
 if [[ -n "$THEME" && "$THEME" != "auto" ]]; then
   CMD+=(--theme "$THEME")
 fi
