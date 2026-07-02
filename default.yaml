@@ -9,7 +9,6 @@ tone: "warm, storytelling, child-friendly"
 subtitles: true
 
 # Content types for --theme / random selection. Add new names here.
-# LLM prompts live in profiles/*.yaml — one file per theme (see profiles/hindu_god_stories.yaml).
 # Unknown theme names still work via a generic fallback profile.
 themes:
   - story
@@ -37,7 +36,6 @@ themes:
   - animals
   - pets
   - inspirational quotes
-  - hindu_god_stories
 
 
 voice:

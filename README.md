@@ -236,7 +236,7 @@ Generated at runtime (gitignored): `output/`, `records/`, `models/`, `*-venv/`.
 Add a name to `themes:` in `default.yaml`, then create `profiles/{theme}.yaml` with `instruction_en` / `instruction_hi`
 and optional `visual_style`.
 
-Built-in themes include: story, joke, bedtime, fantasy, adventure, dragons, hindu_god_stories, and more — see
+Built-in themes include: story, joke, bedtime, fantasy, adventure, dragons, and more — see
 `profiles/`.
 
 **Configure Job** (n8n) theme priority:
