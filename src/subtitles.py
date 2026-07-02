@@ -34,18 +34,127 @@ def write_srt(scenes: list[dict], output_path: Path) -> Path:
     return output_path
 
 
-def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    for path in (
+def _load_font(size: int, black: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    black_paths = (
+        "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+        "/Library/Fonts/Arial Black.ttf",
+    )
+    regular_paths = (
         "/System/Library/Fonts/supplemental/Arial Bold.ttf",
         "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
         "/System/Library/Fonts/Helvetica.ttc",
         "/Library/Fonts/Arial.ttf",
-    ):
+    )
+    for path in (black_paths + regular_paths) if black else regular_paths:
         try:
             return ImageFont.truetype(path, size)
         except OSError:
             continue
     return ImageFont.load_default()
+
+
+def chunk_text(text: str, max_words: int) -> list[str]:
+    """Split narration into short caption chunks (punchy Shorts style).
+
+    max_words <= 0 keeps the full segment as a single caption (legacy behavior).
+    """
+    words = text.split()
+    if not words:
+        return []
+    if max_words <= 0 or len(words) <= max_words:
+        return [text.strip()]
+    return [" ".join(words[i : i + max_words]) for i in range(0, len(words), max_words)]
+
+
+def _draw_outlined(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[int, int],
+    text: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    fill: tuple[int, int, int, int],
+    *,
+    spacing: int,
+    outline: int,
+) -> None:
+    x, y = xy
+    for dx in range(-outline, outline + 1):
+        for dy in range(-outline, outline + 1):
+            if dx or dy:
+                draw.multiline_text(
+                    (x + dx, y + dy), text, font=font, fill=(0, 0, 0, 255),
+                    spacing=spacing, align="center",
+                )
+    draw.multiline_text((x, y), text, font=font, fill=fill, spacing=spacing, align="center")
+
+
+def render_caption_overlay(
+    text: str,
+    video_width: int,
+    font_size: int = 44,
+    margin_x: int = 48,
+    pad: int = 18,
+    pill_alpha: int = 150,
+) -> Image.Image:
+    """Punchy caption: bold white text on a tight rounded pill (full-width strip)."""
+    font = _load_font(font_size, black=False)
+    max_chars = max(8, int((video_width - margin_x * 2) / (font_size * 0.58)))
+    wrapped = textwrap.fill(text.strip(), width=max_chars)
+    spacing = 8
+
+    probe = Image.new("RGBA", (video_width, 10), (0, 0, 0, 0))
+    d = ImageDraw.Draw(probe)
+    bbox = d.multiline_textbbox((0, 0), wrapped, font=font, spacing=spacing)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+    bar_h = th + pad * 2
+    img = Image.new("RGBA", (video_width, bar_h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    box_w = min(video_width, tw + pad * 2)
+    x0 = (video_width - box_w) // 2
+    d.rounded_rectangle([x0, 0, x0 + box_w, bar_h], radius=min(pad, bar_h // 2), fill=(0, 0, 0, pill_alpha))
+
+    tx = (video_width - tw) // 2 - bbox[0]
+    ty = pad - bbox[1]
+    _draw_outlined(d, (tx, ty), wrapped, font, (255, 255, 255, 255), spacing=spacing, outline=2)
+    return img
+
+
+def render_hook_overlay(
+    text: str,
+    video_width: int,
+    font_size: int = 60,
+    margin_x: int = 44,
+    pad: int = 22,
+    pill_alpha: int = 120,
+) -> Image.Image:
+    """Big attention-grabbing hook card: heavy accent-yellow text with a thick outline."""
+    font = _load_font(font_size, black=True)
+    max_chars = max(6, int((video_width - margin_x * 2) / (font_size * 0.62)))
+    wrapped = textwrap.fill(text.strip(), width=max_chars)
+    spacing = 10
+
+    probe = Image.new("RGBA", (video_width, 10), (0, 0, 0, 0))
+    d = ImageDraw.Draw(probe)
+    bbox = d.multiline_textbbox((0, 0), wrapped, font=font, spacing=spacing)
+    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+    bar_h = th + pad * 2
+    img = Image.new("RGBA", (video_width, bar_h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    box_w = min(video_width, tw + pad * 2)
+    x0 = (video_width - box_w) // 2
+    d.rounded_rectangle([x0, 0, x0 + box_w, bar_h], radius=min(pad, bar_h // 2), fill=(0, 0, 0, pill_alpha))
+
+    tx = (video_width - tw) // 2 - bbox[0]
+    ty = pad - bbox[1]
+    _draw_outlined(d, (tx, ty), wrapped, font, (255, 214, 0, 255), spacing=spacing, outline=3)
+    return img
+
+
+def save_overlay_png(image: Image.Image, output_path: Path) -> Path:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_path)
+    return output_path
 
 
 def render_subtitle_overlay(

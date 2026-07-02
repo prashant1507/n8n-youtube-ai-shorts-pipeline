@@ -16,7 +16,10 @@
       "name": "Schedule 5\u00d7 Daily",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 300]
+      "position": [
+        0,
+        300
+      ]
     },
     {
       "parameters": {},
@@ -24,7 +27,10 @@
       "name": "Manual Test",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 100]
+      "position": [
+        0,
+        100
+      ]
     },
     {
       "parameters": {
@@ -92,7 +98,10 @@
       "name": "Configure Job",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [260, 200],
+      "position": [
+        260,
+        200
+      ],
       "notesInFlow": true,
       "notes": "REQUIRED: lang (en or hi).\nSet pipelineApiBase (not /generate). Host n8n: http://127.0.0.1:8765"
     },
@@ -104,7 +113,10 @@
       "name": "Validate Language",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 200]
+      "position": [
+        500,
+        200
+      ]
     },
     {
       "parameters": {
@@ -113,13 +125,19 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'script', lang: $json.lang, theme: $json.theme, themesCsv: $json.themesCsv, duration: $json.duration, tier: $json.tier }) }}",
-        "options": { "timeout": 600000 }
+        "options": {
+          "timeout": 600000
+        }
       },
       "id": "a1b2c3d4-0010-4000-8000-000000000010",
       "name": "Generate Script",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [740, 200]    },
+      "position": [
+        740,
+        200
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -127,13 +145,19 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'voice', run_id: $json.run_id }) }}",
-        "options": { "timeout": 3600000 }
+        "options": {
+          "timeout": 3600000
+        }
       },
       "id": "a1b2c3d4-0011-4000-8000-000000000011",
       "name": "Generate Voice",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [980, 200]    },
+      "position": [
+        980,
+        200
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -141,13 +165,19 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'music', run_id: $json.run_id }) }}",
-        "options": { "timeout": 3600000 }
+        "options": {
+          "timeout": 3600000
+        }
       },
       "id": "a1b2c3d4-0012-4000-8000-000000000012",
       "name": "Generate Music",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1220, 200]    },
+      "position": [
+        1220,
+        200
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -155,15 +185,21 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'images', run_id: $json.run_id }) }}",
-        "options": { "timeout": 3600000 }
+        "options": {
+          "timeout": 3600000
+        }
       },
       "id": "a1b2c3d4-0013-4000-8000-000000000013",
       "name": "Generate Images",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1460, 200],
+      "position": [
+        1460,
+        200
+      ],
       "notesInFlow": true,
-      "notes": "Skipped automatically when tier=wan"    },
+      "notes": "Skipped automatically when tier=wan"
+    },
     {
       "parameters": {
         "method": "POST",
@@ -171,13 +207,19 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'clips', run_id: $json.run_id }) }}",
-        "options": { "timeout": 3600000 }
+        "options": {
+          "timeout": 3600000
+        }
       },
       "id": "a1b2c3d4-0014-4000-8000-000000000014",
       "name": "Generate Clips",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1700, 200]    },
+      "position": [
+        1700,
+        200
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -185,13 +227,19 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'video', run_id: $json.run_id }) }}",
-        "options": { "timeout": 600000 }
+        "options": {
+          "timeout": 600000
+        }
       },
       "id": "a1b2c3d4-0015-4000-8000-000000000015",
       "name": "Assemble Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1940, 200]    },
+      "position": [
+        1940,
+        200
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -199,15 +247,21 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'subtitles', run_id: $json.run_id }) }}",
-        "options": { "timeout": 600000 }
+        "options": {
+          "timeout": 600000
+        }
       },
       "id": "a1b2c3d4-0016-4000-8000-000000000016",
       "name": "Add Subtitles",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2180, 200],
+      "position": [
+        2180,
+        200
+      ],
       "notesInFlow": true,
-      "notes": "Skipped automatically for Hindi (hi)"    },
+      "notes": "Skipped automatically for Hindi (hi)"
+    },
     {
       "parameters": {
         "method": "POST",
@@ -215,13 +269,19 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'audio_mix', run_id: $json.run_id }) }}",
-        "options": { "timeout": 300000 }
+        "options": {
+          "timeout": 300000
+        }
       },
       "id": "a1b2c3d4-0017-4000-8000-000000000017",
       "name": "Mix Audio",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2420, 200]    },
+      "position": [
+        2420,
+        200
+      ]
+    },
     {
       "parameters": {
         "method": "POST",
@@ -229,22 +289,31 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ stage: 'final', run_id: $json.run_id }) }}",
-        "options": { "timeout": 600000 }
+        "options": {
+          "timeout": 600000
+        }
       },
       "id": "a1b2c3d4-0018-4000-8000-000000000018",
       "name": "Final Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2660, 200]    },
+      "position": [
+        2660,
+        200
+      ]
+    },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nconst config = loadConfig();\nconst hostRoot = String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube').replace(/\\/$/, '');\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = String(\n  config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'\n).replace(/\\/$/, '');\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\nconst title = script.title || `Kids ${theme} \u2014 ${langTag}`;\nconst narration = script.narration || script.script || '';\nconst description = [narration, '', `#shorts #${theme} #${langTag} #kids #story`].join('\\n');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || `${apiBase.replace(/\\/$/, '')}/video/${result.run_id}`;\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags: `${theme},${langTag},kids,story,bedtime,shorts`,\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];"
+        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nfunction stripTrailingSlash(s) {\n  return s.endsWith('/') ? s.slice(0, -1) : s;\n}\n\nconst config = loadConfig();\nconst hostRoot = stripTrailingSlash(String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube'));\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = stripTrailingSlash(String(config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'));\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst NL = String.fromCharCode(10);\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\n// Title: prefer the LLM SEO title, cap at YouTube's 100-char limit.\nlet title = String(script.youtube_title || script.title || ('Kids ' + theme + ' - ' + langTag)).trim();\nif (title.length > 100) title = title.slice(0, 97).trim() + '...';\n\n// Hashtags: prefer LLM hashtags, else derive. Strip '#', dedupe, always include shorts, keep <= 5.\nlet hashtags = Array.isArray(script.hashtags) && script.hashtags.length\n  ? script.hashtags.slice()\n  : ['shorts', theme, langTag, 'kids', 'story'];\nhashtags = hashtags\n  .map((h) => String(h).split('#').join('').trim().split(' ').filter(Boolean).join(''))\n  .filter(Boolean)\n  .map((h) => h.toLowerCase());\nif (!hashtags.includes('shorts')) hashtags.unshift('shorts');\nhashtags = Array.from(new Set(hashtags)).slice(0, 5);\nconst hashtagLine = hashtags.map((h) => '#' + h).join(' ');\n\n// Description: prefer LLM SEO description, else narration. Append hashtags. Cap ~4900 chars.\nconst narration = script.narration || script.script || '';\nconst descBody = String(script.youtube_description || narration || '').trim();\nlet description = (descBody + NL + NL + hashtagLine).trim();\nif (description.length > 4900) description = description.slice(0, 4900);\n\n// Tags: prefer LLM SEO tags, else derive. Sanitize, dedupe, obey YouTube ~500-char total budget.\nlet tagList = Array.isArray(script.youtube_tags) && script.youtube_tags.length\n  ? script.youtube_tags.slice()\n  : [theme, langTag, 'kids', 'story', 'shorts'];\ntagList = tagList\n  .map((t) => String(t).split('#').join('').split(',').join('').trim().split(' ').filter(Boolean).join(' '))\n  .filter(Boolean)\n  .map((t) => t.toLowerCase());\ntagList = Array.from(new Set(tagList));\nconst cappedTags = [];\nlet tagChars = 0;\nfor (const t of tagList) {\n  const add = (cappedTags.length ? 1 : 0) + t.length;\n  if (tagChars + add > 480) break;\n  cappedTags.push(t);\n  tagChars += add;\n  if (cappedTags.length >= 15) break;\n}\nconst tags = cappedTags.join(',');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || (stripTrailingSlash(apiBase) + '/video/' + result.run_id);\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags,\n    hashtags: hashtagLine,\n    hookText: String(script.hook_text || ''),\n    titleVariants: Array.isArray(script.title_variants) ? script.title_variants : [],\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];\n"
       },
       "id": "a1b2c3d4-0006-4000-8000-000000000006",
       "name": "Parse Pipeline Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2900, 200]
+      "position": [
+        2900,
+        200
+      ]
     },
     {
       "parameters": {
@@ -263,7 +332,11 @@
       "name": "Fetch Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3140, 200]    },
+      "position": [
+        3140,
+        200
+      ]
+    },
     {
       "parameters": {
         "resource": "video",
@@ -284,7 +357,11 @@
       "name": "Upload to YouTube",
       "type": "n8n-nodes-base.youTube",
       "typeVersion": 1,
-      "position": [3380, 200]    },
+      "position": [
+        3380,
+        200
+      ]
+    },
     {
       "parameters": {
         "assignments": {
@@ -327,57 +404,188 @@
       "name": "Upload Complete",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [3620, 200]
+      "position": [
+        3620,
+        200
+      ]
     }
   ],
   "connections": {
     "Schedule 5\u00d7 Daily": {
-      "main": [[{ "node": "Configure Job", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Configure Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Manual Test": {
-      "main": [[{ "node": "Configure Job", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Configure Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Configure Job": {
-      "main": [[{ "node": "Validate Language", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Validate Language",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Validate Language": {
-      "main": [[{ "node": "Generate Script", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Generate Script": {
-      "main": [[{ "node": "Generate Voice", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Generate Voice": {
-      "main": [[{ "node": "Generate Music", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Music",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Generate Music": {
-      "main": [[{ "node": "Generate Images", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Generate Images": {
-      "main": [[{ "node": "Generate Clips", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Clips",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Generate Clips": {
-      "main": [[{ "node": "Assemble Video", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Assemble Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Assemble Video": {
-      "main": [[{ "node": "Add Subtitles", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Add Subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Add Subtitles": {
-      "main": [[{ "node": "Mix Audio", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Mix Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Mix Audio": {
-      "main": [[{ "node": "Final Video", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Final Video": {
-      "main": [[{ "node": "Parse Pipeline Result", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse Pipeline Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Pipeline Result": {
-      "main": [[{ "node": "Fetch Video", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fetch Video": {
-      "main": [[{ "node": "Upload to YouTube", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Upload to YouTube": {
-      "main": [[{ "node": "Upload Complete", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Upload Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "pinData": {},

@@ -8,6 +8,16 @@ duration_sec: 60        # 30-60
 tone: "warm, storytelling, child-friendly"
 subtitles: true
 
+# Retention touches for the Shorts feed (burned on-screen).
+shorts:
+  hook_overlay: true          # burn the LLM hook_text big on the first seconds of the video
+  hook_overlay_sec: 2.5       # how long the on-screen hook stays up
+  caption_chunk_words: 4      # short punchy captions; set 0 for full-sentence captions (legacy)
+  caption_font_scale: 1.35    # bigger than the old bottom subtitle bar
+  caption_y_ratio: 0.72       # 0 = top, 1 = bottom; ~0.72 sits in the lower third
+  loop_transition: true       # cross-dissolve the ending back to the opening for seamless replays
+  loop_transition_sec: 0.4
+
 # Content types for --theme / random selection. Add new names here.
 # Unknown theme names still work via a generic fallback profile.
 themes:
@@ -87,3 +97,9 @@ llm:
     min_score: 6           # accept when score >= this (1-10)
     max_revisions: 2       # revise attempts per stage when score is low
     temperature: 0.3       # lower temp for review/revise (generation uses temperature above)
+  seo:
+    enabled: true          # generate YouTube title variants, description, tags for reach/CTR
+    title_variants: 5      # how many candidate titles the LLM proposes (best one is chosen)
+    max_title_chars: 90    # keep titles short enough to show fully in the Shorts feed
+    max_tags: 15           # number of SEO tags to attach on upload
+    temperature: 0.7       # a little creativity for punchy titles

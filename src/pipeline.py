@@ -221,7 +221,9 @@ def run_stage(
         from .subtitles import write_srt
 
         clips = list_scene_clips(out)
-        subtitled_clips = subtitles_on_clips_stage(clips, scenes, config, out)
+        subtitled_clips = subtitles_on_clips_stage(
+            clips, scenes, config, out, hook_text=script.get("hook_text"),
+        )
         subtitled_video = out / "video_subtitled.mp4"
         concat_clips(subtitled_clips, subtitled_video)
         write_srt(scenes, out / "subtitles.srt")
@@ -264,6 +266,13 @@ def run_stage(
                 capture_output=True,
             )
             final_path = subtitled
+        if config.shorts.loop_transition:
+            from .assembler import apply_loop_transition
+
+            try:
+                apply_loop_transition(final_path, config.shorts.loop_transition_sec)
+            except Exception as exc:
+                logger.warning("Loop transition skipped: %s", exc)
         progress("done", 1.0, f"Complete: {final_path}")
         return _stage_result("final", out, extra={"final_video": str(final_path)})
 
@@ -342,7 +351,10 @@ def run_pipeline(
     clips = generate_clips(out, config, scenes, flux_subprocess=True)
 
     progress("assembly", 0.85, "Assembling final video...")
-    final = assemble_pipeline_output(clips, voice_path, music_path, scenes, config, out)
+    final = assemble_pipeline_output(
+        clips, voice_path, music_path, scenes, config, out,
+        hook_text=script.get("hook_text"),
+    )
 
     progress("done", 1.0, f"Complete: {final}")
     return {

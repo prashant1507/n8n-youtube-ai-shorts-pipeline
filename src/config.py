@@ -69,12 +69,35 @@ class QualityConfig(BaseModel):
     temperature: float = 0.3
 
 
+class SeoConfig(BaseModel):
+    """YouTube packaging: SEO title variants, description, tags for reach/CTR."""
+
+    enabled: bool = True
+    title_variants: int = 5
+    max_title_chars: int = 90
+    max_tags: int = 15
+    temperature: float = 0.7
+
+
 class LLMConfig(BaseModel):
     base_url: str
     model: str
     temperature: float
     auto_select_model: bool
     quality: QualityConfig = Field(default_factory=QualityConfig)
+    seo: SeoConfig = Field(default_factory=SeoConfig)
+
+
+class ShortsConfig(BaseModel):
+    """Retention touches for Shorts: on-screen hook, punchy captions, loop transition."""
+
+    hook_overlay: bool = True
+    hook_overlay_sec: float = 2.5
+    caption_chunk_words: int = 4      # 0 = show the full narration segment (legacy behavior)
+    caption_font_scale: float = 1.35  # relative to the base subtitle font
+    caption_y_ratio: float = 0.72     # vertical center of captions (0 = top, 1 = bottom)
+    loop_transition: bool = True
+    loop_transition_sec: float = 0.4
 
 
 class PipelineConfig(BaseModel):
@@ -88,6 +111,7 @@ class PipelineConfig(BaseModel):
     video: VideoConfig
     llm: LLMConfig
     subtitles: bool
+    shorts: ShortsConfig = Field(default_factory=ShortsConfig)
 
     @property
     def width(self) -> int:

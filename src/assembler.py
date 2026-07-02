@@ -8,7 +8,14 @@ from pathlib import Path
 
 from .config import PipelineConfig
 from .media import probe_duration
-from .subtitles import save_subtitle_overlay_png, write_srt
+from .subtitles import (
+    chunk_text,
+    render_caption_overlay,
+    render_hook_overlay,
+    save_overlay_png,
+    save_subtitle_overlay_png,
+    write_srt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +153,101 @@ def overlay_subtitle_on_clip(
     return output_path
 
 
+def _overlay_timed_pngs(
+    clip_path: Path,
+    overlays: list[dict],
+    output_path: Path,
+) -> Path:
+    """Overlay several full-width PNGs on a clip, each time-gated to [start, end]."""
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if not overlays:
+        _run(["ffmpeg", "-y", "-i", str(clip_path.resolve()), "-c", "copy", str(output_path.resolve())])
+        return output_path
+
+    inputs: list[str] = ["-i", str(clip_path.resolve())]
+    for ov in overlays:
+        inputs += ["-i", str(Path(ov["png"]).resolve())]
+
+    parts: list[str] = []
+    label = "0:v"
+    for idx, ov in enumerate(overlays, start=1):
+        out_label = f"v{idx}"
+        parts.append(
+            f"[{label}][{idx}:v]overlay=0:{ov['y']}:"
+            f"enable='between(t,{ov['start']:.3f},{ov['end']:.3f})'[{out_label}]"
+        )
+        label = out_label
+    filt = ";".join(parts)
+
+    _run([
+        "ffmpeg", "-y",
+        *inputs,
+        "-filter_complex", filt,
+        "-map", f"[{label}]",
+        "-map", "0:a?",
+        "-c:a", "copy",
+        "-pix_fmt", "yuv420p",
+        str(output_path.resolve()),
+    ])
+    return output_path
+
+
+def burn_dynamic_on_clip(
+    clip: Path,
+    scene: dict,
+    output: Path,
+    config: PipelineConfig,
+    *,
+    hook_text: str | None = None,
+    is_first: bool = False,
+) -> Path:
+    """Burn punchy chunked captions (and, on the first clip, the on-screen hook)."""
+    shorts = config.shorts
+    width, height = config.width, config.height
+    scale = height / 1920.0
+    dur = probe_duration(clip)
+    overlays: list[dict] = []
+    tmp_pngs: list[Path] = []
+
+    text = scene.get("narration_segment", "").strip()
+    chunks = chunk_text(text, shorts.caption_chunk_words) if text else []
+    if chunks:
+        cap_font = max(20, int(round(28 * shorts.caption_font_scale * scale)))
+        cap_y = f"H*{shorts.caption_y_ratio:.3f}-h/2"
+        weights = [max(1, len(c)) for c in chunks]
+        wsum = sum(weights)
+        t = 0.0
+        for j, (chunk, weight) in enumerate(zip(chunks, weights)):
+            seg = dur * weight / wsum
+            png = output.parent / f".{output.stem}_cap{j}.png"
+            save_overlay_png(render_caption_overlay(chunk, width, font_size=cap_font), png)
+            tmp_pngs.append(png)
+            end = dur if j == len(chunks) - 1 else t + seg
+            overlays.append({"png": png, "y": cap_y, "start": round(t, 3), "end": round(end, 3)})
+            t += seg
+
+    if is_first and hook_text and shorts.hook_overlay:
+        hook_font = max(34, int(round(58 * scale)))
+        png = output.parent / f".{output.stem}_hook.png"
+        save_overlay_png(render_hook_overlay(hook_text, width, font_size=hook_font), png)
+        tmp_pngs.append(png)
+        overlays.append({
+            "png": png,
+            "y": "H*0.16",
+            "start": 0.0,
+            "end": round(min(shorts.hook_overlay_sec, dur), 3),
+        })
+
+    if not overlays:
+        _run(["ffmpeg", "-y", "-i", str(clip.resolve()), "-c", "copy", str(output.resolve())])
+    else:
+        _overlay_timed_pngs(clip, overlays, output)
+
+    for png in tmp_pngs:
+        png.unlink(missing_ok=True)
+    return output
+
+
 def burn_subtitles_on_clips(
     clips: list[Path],
     scenes: list[dict],
@@ -153,23 +255,68 @@ def burn_subtitles_on_clips(
     video_width: int,
     video_height: int,
     font_size: int = 28,
+    config: PipelineConfig | None = None,
+    hook_text: str | None = None,
 ) -> list[Path]:
-    """Add subtitles to each clip matching scene narration."""
+    """Add captions to each clip. Uses dynamic chunked captions + hook when config is given."""
     subtitled_dir = output_dir / "clips_subtitled"
     subtitled_dir.mkdir(parents=True, exist_ok=True)
     out_clips: list[Path] = []
+
+    use_dynamic = config is not None
 
     for i, clip in enumerate(clips):
         scene = scenes[i] if i < len(scenes) else {}
         text = scene.get("narration_segment", "").strip()
         out = subtitled_dir / clip.name
-        if text:
+        if use_dynamic:
+            burn_dynamic_on_clip(
+                clip, scene, out, config,
+                hook_text=hook_text, is_first=(i == 0),
+            )
+        elif text:
             overlay_subtitle_on_clip(clip, text, out, video_width, video_height, font_size)
         else:
             _run(["ffmpeg", "-y", "-i", str(clip), "-c", "copy", str(out)])
         out_clips.append(out)
 
     return out_clips
+
+
+def apply_loop_transition(video_path: Path, fade_sec: float = 0.4) -> Path:
+    """Cross-dissolve the ending back into the opening so the Short replays seamlessly.
+
+    Edits in place (same filename), preserving audio and total duration.
+    """
+    dur = probe_duration(video_path)
+    fade = max(0.15, min(fade_sec, dur * 0.3))
+    offset = max(0.0, dur - fade)
+    open_clip = video_path.parent / f".{video_path.stem}_open.mp4"
+    looped = video_path.parent / f".{video_path.stem}_looped.mp4"
+
+    _run([
+        "ffmpeg", "-y",
+        "-i", str(video_path.resolve()),
+        "-t", f"{fade:.3f}",
+        "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        str(open_clip.resolve()),
+    ])
+    _run([
+        "ffmpeg", "-y",
+        "-i", str(video_path.resolve()),
+        "-i", str(open_clip.resolve()),
+        "-filter_complex",
+        f"[0:v][1:v]xfade=transition=fade:duration={fade:.3f}:offset={offset:.3f},format=yuv420p[v]",
+        "-map", "[v]",
+        "-map", "0:a?",
+        "-c:a", "copy",
+        "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        str(looped.resolve()),
+    ])
+    open_clip.unlink(missing_ok=True)
+    looped.replace(video_path)
+    return video_path
 
 
 def burn_subtitles(
@@ -250,10 +397,12 @@ def subtitles_on_clips_stage(
     scenes: list[dict],
     config: PipelineConfig,
     output_dir: Path,
+    hook_text: str | None = None,
 ) -> list[Path]:
-    """Burn bottom subtitles on each clip."""
+    """Burn captions on each clip (dynamic chunked captions + first-clip hook)."""
     return burn_subtitles_on_clips(
         clips, scenes, output_dir, config.width, config.height,
+        config=config, hook_text=hook_text,
     )
 
 
@@ -300,6 +449,7 @@ def assemble_pipeline_output(
     scenes: list[dict],
     config: PipelineConfig,
     output_dir: Path,
+    hook_text: str | None = None,
 ) -> Path:
     video_raw = output_dir / "video_raw.mp4"
     audio_mixed = output_dir / "audio_mixed.wav"
@@ -308,6 +458,7 @@ def assemble_pipeline_output(
     if config.subtitles and scenes:
         clips = burn_subtitles_on_clips(
             clips, scenes, output_dir, config.width, config.height,
+            config=config, hook_text=hook_text,
         )
 
     video_raw = concat_video_stage(output_dir, prefer_subtitled_clips=bool(config.subtitles and scenes))
@@ -319,6 +470,12 @@ def assemble_pipeline_output(
         write_srt(scenes, srt_path)
         subtitled = output_dir / "final_subtitled.mp4"
         _run(["ffmpeg", "-y", "-i", str(final_path), "-c", "copy", str(subtitled)])
-        return subtitled
+        final_path = subtitled
+
+    if config.shorts.loop_transition:
+        try:
+            apply_loop_transition(final_path, config.shorts.loop_transition_sec)
+        except Exception as exc:  # loop is a nicety; never fail the whole render for it
+            logger.warning("Loop transition skipped: %s", exc)
 
     return final_path

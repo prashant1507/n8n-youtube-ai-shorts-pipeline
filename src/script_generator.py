@@ -60,6 +60,34 @@ IMAGE_PROMPTS_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+YOUTUBE_META_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "titles": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 1,
+            "maxItems": 8,
+        },
+        "description": {"type": "string"},
+        "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 3,
+            "maxItems": 25,
+        },
+        "hashtags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 0,
+            "maxItems": 6,
+        },
+        "hook_text": {"type": "string"},
+    },
+    "required": ["titles", "description", "tags", "hashtags", "hook_text"],
+    "additionalProperties": False,
+}
+
 
 def _extract_message_content(message: Any) -> str:
     """Support reasoning models that put JSON in reasoning_content."""
@@ -145,6 +173,16 @@ def _story_system_prompt(config: PipelineConfig) -> str:
         f"Content type: {content_type}. Tone: {config.tone}.\n\n"
         "### YOUR TASK ###\n"
         f"{task_block}\n\n"
+        "### HOOK — FIRST 1-2 SENTENCES (most important for YouTube Shorts) ###\n"
+        "The opening decides whether viewers keep watching. Make the first 1-2 sentences a strong hook:\n"
+        "- Open with a curiosity gap, a surprising claim, a vivid problem, a question, or a mini-cliffhanger.\n"
+        "- Create an instant reason to keep watching within the first 3 seconds.\n"
+        "- Hint at the payoff to come, but do NOT reveal the ending.\n"
+        "- BANNED generic openings: 'Once upon a time', 'In a village', 'There was a', 'Long ago', "
+        "'One day' as the very first words.\n"
+        "- Keep the hook concrete and easy to say aloud — no meta narration like 'In this story'.\n\n"
+        "### ENDING — LOOP-FRIENDLY ###\n"
+        "End on a warm, satisfying note whose mood or image echoes the opening, so the short feels good to replay.\n\n"
         f"### NARRATION RULES (critical for TTS) ###\n"
         "1. Write for the ear, not the page — short sentences, gentle rhythm.\n"
         "2. Use simple punctuation only: periods, commas, question marks. No emojis, bullets, or stage directions.\n"
@@ -428,6 +466,147 @@ def _generate_unique_story(
     )
 
 
+def _youtube_meta_system(config: PipelineConfig) -> str:
+    lang = language_label(config)
+    seo = config.llm.seo
+    content_type = theme_key(config.theme)
+    if lang == "hindi":
+        lang_rule = (
+            "Write titles, description and hook_text in natural Hindi (Devanagari). "
+            "Tags may mix Hindi and simple English/transliterated keywords. "
+            "hashtags should include Hindi and English variants."
+        )
+    else:
+        lang_rule = "Write titles, description, hook_text, tags and hashtags in English."
+
+    return (
+        "You are a YouTube Shorts growth strategist who writes packaging (titles, "
+        "descriptions, tags) that maximizes click-through rate and reach.\n"
+        f"Content type: {content_type}. Audience: family/kids-friendly viewers.\n\n"
+        "### TITLES ###\n"
+        f"Propose {seo.title_variants} DISTINCT title candidates, strongest first.\n"
+        f"- Each title <= {seo.max_title_chars} characters.\n"
+        "- Use curiosity gaps, specificity, emotion, or a light question — but never mislead "
+        "(the title must match the actual story).\n"
+        "- No ALL CAPS words, no clickbait lies, no emojis, family-safe.\n"
+        "- Do not put the word 'Shorts' or hashtags inside the titles.\n\n"
+        "### DESCRIPTION ###\n"
+        "2-4 short sentences: lead with the hook/benefit, tease the story, end with a soft "
+        "call to action (like/subscribe/watch till end). No hashtags in the description body.\n\n"
+        "### TAGS ###\n"
+        f"Give up to {seo.max_tags} lowercase SEO keywords/phrases relevant to the story, theme, "
+        "and audience (mix broad + specific). No '#', no duplicates.\n\n"
+        "### HASHTAGS ###\n"
+        "3-5 hashtags WITHOUT the '#' symbol (added later). Always include 'shorts'.\n\n"
+        "### HOOK_TEXT ###\n"
+        "A punchy on-screen hook of at most 8 words for the first frame — bold and curiosity-driving.\n\n"
+        f"### LANGUAGE ###\n{lang_rule}\n\n"
+        "### OUTPUT PROTOCOL ###\n"
+        "Return ONLY raw JSON on a single line. It must begin with '{' and end with '}'.\n"
+        'Keys: "titles" (array), "description" (string), "tags" (array), '
+        '"hashtags" (array), "hook_text" (string).'
+    )
+
+
+def _youtube_meta_user(config: PipelineConfig, title: str, script_text: str) -> str:
+    return (
+        f"STORY TITLE (working): {title}\n\n"
+        f"STORY NARRATION:\n{script_text}\n\n"
+        "Write the YouTube packaging for this Short now."
+    )
+
+
+_HASHTAG_CLEAN = re.compile(r"[^0-9A-Za-z\u0900-\u097F]+")
+
+
+def _clean_tag(tag: str) -> str:
+    return re.sub(r"\s+", " ", str(tag).replace("#", "").strip()).strip(" ,")
+
+
+def _clean_hashtag(tag: str) -> str:
+    return _HASHTAG_CLEAN.sub("", str(tag).replace("#", "").strip())
+
+
+def _dedupe_keep_order(items: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in items:
+        key = item.lower()
+        if item and key not in seen:
+            seen.add(key)
+            out.append(item)
+    return out
+
+
+def _choose_youtube_title(candidates: list[str], fallback: str, max_chars: int) -> str:
+    for cand in candidates:
+        cand = cand.strip().strip('"')
+        if cand and len(cand) <= max_chars:
+            return cand
+    best = (candidates[0].strip().strip('"') if candidates else "") or fallback
+    if len(best) > max_chars:
+        best = best[: max_chars - 1].rstrip() + "\u2026"
+    return best
+
+
+def generate_youtube_metadata(
+    client: OpenAI,
+    model: str,
+    config: PipelineConfig,
+    title: str,
+    script_text: str,
+) -> dict[str, Any] | None:
+    """Generate CTR/SEO packaging: title variants, description, tags, hashtags, hook text.
+
+    Returns None (and the pipeline falls back to legacy metadata) on any failure.
+    """
+    seo = config.llm.seo
+    if not seo.enabled:
+        return None
+    try:
+        result = _llm_json_call(
+            client,
+            model,
+            config,
+            _youtube_meta_system(config),
+            _youtube_meta_user(config, title, script_text),
+            YOUTUBE_META_SCHEMA,
+            max_retries=3,
+        )
+    except Exception as exc:
+        logger.warning("YouTube metadata generation failed, using fallback: %s", exc)
+        return None
+
+    raw_titles = [str(t).strip().strip('"') for t in (result.get("titles") or []) if str(t).strip()]
+    raw_titles = _dedupe_keep_order(raw_titles)
+    youtube_title = _choose_youtube_title(raw_titles, title, seo.max_title_chars)
+
+    tags = _dedupe_keep_order(
+        [t for t in (_clean_tag(x) for x in (result.get("tags") or [])) if t]
+    )[: seo.max_tags]
+
+    hashtags = _dedupe_keep_order(
+        [h for h in (_clean_hashtag(x) for x in (result.get("hashtags") or [])) if h]
+    )
+    if not any(h.lower() == "shorts" for h in hashtags):
+        hashtags.insert(0, "shorts")
+    hashtags = hashtags[:5]
+
+    description = str(result.get("description") or "").strip()
+    hook_text = str(result.get("hook_text") or "").strip().strip('"')
+
+    logger.info("YouTube SEO title: %s (%d variants, %d tags)", youtube_title, len(raw_titles), len(tags))
+
+    return {
+        "youtube_title": youtube_title,
+        "title_variants": raw_titles,
+        "youtube_description": description,
+        "youtube_tags": tags,
+        "hashtags": hashtags,
+        "hook_text": hook_text,
+    }
+
+
 def generate_script(config: PipelineConfig) -> dict[str, Any]:
     """Two-step generation: LLM invents content from content-type theme."""
     client = OpenAI(base_url=config.llm.base_url, api_key="lm-studio")
@@ -462,7 +641,7 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
 
     scenes = _build_scenes(script_text, image_prompts, config.duration_sec)
 
-    return {
+    result: dict[str, Any] = {
         "title": title,
         "script": script_text,
         "narration": script_text,
@@ -473,3 +652,9 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
         "scenes": scenes,
         "music_prompt": _default_music_prompt(config),
     }
+
+    metadata = generate_youtube_metadata(client, model, config, title, script_text)
+    if metadata:
+        result.update(metadata)
+
+    return result
