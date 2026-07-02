@@ -1,16 +1,16 @@
 # n8n YouTube Shorts Pipeline
 
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-MPS-EE4C2C?style=flat&logo=pytorch&logoColor=white)
-![n8n](https://img.shields.io/badge/n8n-workflow-EA4B71?style=flat&logo=n8n&logoColor=white)
-![FFmpeg](https://img.shields.io/badge/FFmpeg-assembly-007808?style=flat&logo=ffmpeg&logoColor=white)
-![YouTube](https://img.shields.io/badge/YouTube-upload-FF0000?style=flat&logo=youtube&logoColor=white)
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-MPS-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![n8n](https://img.shields.io/badge/n8n-workflow-EA4B71?style=flat&logo=n8n&logoColor=white)](https://n8n.io/)
+[![FFmpeg](https://img.shields.io/badge/FFmpeg-assembly-007808?style=flat&logo=ffmpeg&logoColor=white)](https://ffmpeg.org/)
+[![YouTube](https://img.shields.io/badge/YouTube-upload-FF0000?style=flat&logo=youtube&logoColor=white)](https://developers.google.com/youtube/v3)
 
-![LLM](https://img.shields.io/badge/LLM-OpenAI%20compatible-412991?style=flat&logo=openai&logoColor=white)
-![Hugging Face](https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat&logo=huggingface&logoColor=black)
-![Diffusers](https://img.shields.io/badge/Diffusers-0.38+-121212?style=flat&logo=huggingface&logoColor=white)
-![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Divya-2563EB?style=flat&logo=googleassistant&logoColor=white)
-![Wan](https://img.shields.io/badge/Wan-2.2%20optional-6366F1?style=flat&logo=apple&logoColor=white)
+[![LLM](https://img.shields.io/badge/LLM-OpenAI%20compatible-412991?style=flat&logo=openai&logoColor=white)](https://lmstudio.ai/)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-models-FFD21E?style=flat&logo=huggingface&logoColor=black)](https://huggingface.co/)
+[![Diffusers](https://img.shields.io/badge/Diffusers-0.38+-121212?style=flat&logo=huggingface&logoColor=white)](https://huggingface.co/docs/diffusers)
+[![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Divya-2563EB?style=flat&logo=googleassistant&logoColor=white)](https://huggingface.co/ai4bharat/indic-parler-tts)
+[![Wan](https://img.shields.io/badge/Wan-2.2%20optional-6366F1?style=flat&logo=apple&logoColor=white)](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)
 
 Automated pipeline for **kids’ YouTube Shorts**: LLM story → TTS narration → background music → AI visuals → subtitles →
 final MP4. Built for **Apple Silicon (MPS)** with optional **n8n** scheduling and **YouTube upload**.
