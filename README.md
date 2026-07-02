@@ -1,7 +1,5 @@
 # n8n YouTube Shorts Pipeline
 
-**Live channel:** [@ShortSpark123a Shorts](https://www.youtube.com/@ShortSpark123a/shorts)
-
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-MPS-EE4C2C?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![n8n](https://img.shields.io/badge/n8n-workflow-EA4B71?style=flat&logo=n8n&logoColor=white)](https://n8n.io/)
@@ -13,6 +11,8 @@
 [![Diffusers](https://img.shields.io/badge/Diffusers-0.38+-121212?style=flat&logo=huggingface&logoColor=white)](https://huggingface.co/docs/diffusers)
 [![Parler-TTS](https://img.shields.io/badge/Parler--TTS-Divya-2563EB?style=flat&logo=googleassistant&logoColor=white)](https://huggingface.co/ai4bharat/indic-parler-tts)
 [![Wan](https://img.shields.io/badge/Wan-2.2%20optional-6366F1?style=flat&logo=apple&logoColor=white)](https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B-Diffusers)
+
+**Live channel:** [@ShortSpark123a](https://www.youtube.com/@ShortSpark123a/shorts)
 
 Automated pipeline for **kids’ YouTube Shorts**: LLM story → TTS narration → background music → AI visuals → subtitles →
 final MP4. Built for **Apple Silicon (MPS)** with optional **n8n** scheduling and **YouTube upload**.
