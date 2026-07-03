@@ -117,8 +117,9 @@ llm:
       - emotional
 
 # YouTube performance feedback loop (records/uploads.json).
-# n8n records each upload via POST /youtube/uploaded; a daily n8n workflow calls
-# POST /youtube/sync-stats (needs a Data API v3 key in the YOUTUBE_API_KEY env var).
+# n8n records each upload via POST /youtube/uploaded; daily n8n workflow fetches stats
+# with the same YouTube OAuth credential as upload, then POST /youtube/push-stats.
+# Optional fallback: YOUTUBE_API_KEY env + POST /youtube/sync-stats.
 # Once enough videos have stats, top/bottom titles are fed back into the SEO prompt.
 analytics:
   enabled: true
