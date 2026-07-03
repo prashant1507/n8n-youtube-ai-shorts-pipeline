@@ -179,6 +179,16 @@ class Handler(BaseHTTPRequestHandler):
                 logger.exception("Analytics report error")
                 self._send(500, {"error": str(exc)})
             return
+        if path == "/youtube/uploads":
+            from .youtube_analytics import list_uploads
+
+            self._send(200, list_uploads())
+            return
+        if path == "/youtube/pending-comments":
+            from .youtube_analytics import list_pending_comments
+
+            self._send(200, list_pending_comments())
+            return
         if path.startswith("/video/"):
             run_id = path[len("/video/") :].strip("/")
             try:
@@ -194,7 +204,14 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0].rstrip("/")
-        if path not in {"/generate", "/step", "/youtube/uploaded", "/youtube/sync-stats"}:
+        if path not in {
+            "/generate",
+            "/step",
+            "/youtube/uploaded",
+            "/youtube/sync-stats",
+            "/youtube/push-stats",
+            "/youtube/comment-posted",
+        }:
             self._send(404, {"error": "not found"})
             return
 
@@ -218,6 +235,22 @@ class Handler(BaseHTTPRequestHandler):
                 result = sync_stats()
                 result["report"] = performance_report()
                 self._send(200, result)
+                return
+            if path == "/youtube/push-stats":
+                from .youtube_analytics import performance_report, push_stats
+
+                raw_stats = body.get("stats")
+                if not isinstance(raw_stats, list):
+                    raise ValueError('stats must be an array of {video_id, views, likes, comments}')
+                result = push_stats(raw_stats)
+                result["report"] = performance_report()
+                self._send(200, result)
+                return
+            if path == "/youtube/comment-posted":
+                from .youtube_analytics import mark_comment_posted
+
+                rec = mark_comment_posted(str(body.get("video_id", "")).strip())
+                self._send(200, {"ok": True, **rec})
                 return
             if path == "/step":
                 result = _run_step(body)
@@ -246,7 +279,8 @@ def main() -> None:
     logger.info("Video pipeline API listening on http://%s:%s", HOST, PORT)
     logger.info(
         "POST /generate  POST /step  POST /youtube/uploaded  POST /youtube/sync-stats  "
-        "GET /health  GET /video/{run_id}  GET /youtube/report"
+        "POST /youtube/push-stats  POST /youtube/comment-posted  GET /health  GET /video/{run_id}  "
+        "GET /youtube/report  GET /youtube/uploads  GET /youtube/pending-comments"
     )
     logger.info(
         "Step retries: max_tries=%d wait_sec=%d (override with N8N_STEP_MAX_TRIES / N8N_STEP_RETRY_WAIT_SEC)",

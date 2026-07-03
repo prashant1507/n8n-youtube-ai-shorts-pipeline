@@ -187,6 +187,9 @@ python -m src.pipeline --video-only --from-run output/YYYYMMDD_HHMMSS_xxx --tier
 3. Edit **Configure Job** (see table below), attach YouTube OAuth on **Upload to YouTube**
 4. Re-import the workflow JSON after any workflow changes in this repo
 
+After each successful upload, **Record Upload** calls `POST /youtube/uploaded` and appends a row to
+`records/uploads.csv`. See [YouTube analytics](#youtube-analytics--uploads-registry) below for stats sync.
+
 The workflow runs **one HTTP step per pipeline stage** via `POST /step`:
 
 | n8n node        | API stage   | Output                             |
@@ -306,3 +309,70 @@ youtubePrivacy: public
 5. **Cursor** — open folder `/Users/user/Downloads/n8n-youtube`.
 
 6. **Restart API:** `./scripts/start-n8n-api.sh`
+
+## YouTube analytics & uploads registry
+
+The pipeline tracks which Shorts were uploaded and learns from view data for better SEO titles.
+
+### Files (under `records/`)
+
+| File | Purpose |
+|------|---------|
+| `uploads.csv` | One row per uploaded video — open in Excel/Numbers. Columns: `run_id`, `video_id`, `title`, `title_style`, `hook_text`, `language`, `content_type`, `uploaded_at`, `views`, `likes`, `comments`, `stats_fetched_at`, `comment_posted_at` |
+| `upload_stats.csv` | Historical stat snapshots (one row per sync) |
+| `stories.json` | Story dedup (separate from uploads) |
+
+New uploads are recorded automatically when the upload workflow's **Record Upload** node succeeds.
+
+### Stats sync workflow
+
+1. Import `n8n/youtube-analytics-sync.json` (scheduled daily at **22:00** / 10 PM, or use **Manual Test**).
+2. Set **Configure** → `pipelineApiBase` to `http://host.docker.internal:8765` (same port as the pipeline API).
+3. Node auth:
+
+| Node | URL | Authentication |
+|------|-----|----------------|
+| **Get Uploads** | `{pipelineApiBase}/youtube/uploads` | **None** (local Mac API) |
+| **Fetch YouTube Stats** | `youtube/v3/videos?part=statistics&…` | **YouTube OAuth2 API** (same credential as upload) |
+| **Push Stats** | `{pipelineApiBase}/youtube/push-stats` | **None** |
+
+Do **not** put YouTube OAuth on **Get Uploads** — that node only reads `records/uploads.csv` on your Mac.
+
+### CLI (from `flux-venv`)
+
+```bash
+source flux-venv/bin/activate
+
+# Print views/day ranking + per-title-style averages
+python -m src.youtube_analytics report
+
+# Fetch fresh stats for all rows in uploads.csv (needs YOUTUBE_API_KEY on the Mac)
+python -m src.youtube_analytics sync
+
+# Rebuild uploads.csv from existing output/ runs + live channel titles
+python -m src.youtube_analytics backfill
+```
+
+**Backfill** is useful if you uploaded videos before **Record Upload** was wired up. It:
+
+- Scans `output/*/script.json` where `final.mp4` exists
+- Matches titles against your channel via `yt-dlp` (`brew install yt-dlp`)
+- Writes `records/uploads.csv` (default channel: `@ShortSpark123a/shorts`; override with `YOUTUBE_CHANNEL_URL`)
+
+Verify the registry:
+
+```bash
+curl http://127.0.0.1:8765/youtube/uploads
+# → {"count": 42, "video_ids": ["...", ...], "uploads": [...]}
+```
+
+Once enough videos have stats (`analytics.min_videos_for_feedback` in `default.yaml`, default 4), the SEO prompt
+automatically receives top/bottom title performance data on the next script generation run.
+
+### Engagement comment catch-up (every 2 days, 4 PM)
+
+Import `n8n/youtube-engagement-comments.json`. It:
+
+1. **Get Pending Comments** — `GET /youtube/pending-comments` (all uploads: `youtube_comment` from `script.json` when present, else a pool pick from `engagement_comment_pool_en` / `engagement_comment_pool_hi` in `default.yaml`)
+2. **Post Comment** — YouTube OAuth, text from API response (no new LLM)
+3. **Mark Comment Posted** — `POST /youtube/comment-posted` updates `comment_posted_at` in `uploads.csv` (informational; reruns still comment)

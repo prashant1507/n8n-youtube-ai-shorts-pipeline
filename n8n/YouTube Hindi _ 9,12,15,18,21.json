@@ -368,50 +368,17 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "done1",
-              "name": "status",
-              "value": "uploaded",
-              "type": "string"
-            },
-            {
-              "id": "done2",
-              "name": "youtubeVideoId",
-              "value": "={{ $json.id }}",
-              "type": "string"
-            },
-            {
-              "id": "done3",
-              "name": "youtubeUrl",
-              "value": "=https://www.youtube.com/watch?v={{ $json.id }}",
-              "type": "string"
-            },
-            {
-              "id": "done4",
-              "name": "localVideo",
-              "value": "={{ $('Parse Pipeline Result').item.json.final_video }}",
-              "type": "string"
-            },
-            {
-              "id": "done5",
-              "name": "runId",
-              "value": "={{ $('Parse Pipeline Result').item.json.run_id }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "const upload = $('Upload to YouTube').first().json;\nconst parsed = $('Parse Pipeline Result').first().json;\n\nfunction pickVideoId(data) {\n  if (!data || typeof data !== 'object') return '';\n  const candidates = [\n    data.id,\n    data.videoId,\n    data.video_id,\n    data?.snippet?.resourceId?.videoId,\n    data?.body?.id,\n    data?.uploadId,\n  ];\n  for (const c of candidates) {\n    const v = String(c ?? '').trim();\n    if (v && v !== 'null' && v !== 'undefined') return v;\n  }\n  return '';\n}\n\nconst videoId = pickVideoId(upload);\nif (!videoId) {\n  throw new Error(\n    'YouTube upload did not return a video ID. Open Upload to YouTube output and check the JSON. Keys: '\n      + Object.keys(upload || {}).join(', ')\n      + ' Preview: ' + JSON.stringify(upload || {}).slice(0, 800),\n  );\n}\n\nreturn [{\n  json: {\n    status: 'uploaded',\n    youtubeVideoId: videoId,\n    youtubeUrl: 'https://www.youtube.com/watch?v=' + videoId,\n    localVideo: parsed.final_video,\n    runId: parsed.run_id,\n  },\n}];"
       },
       "id": "7251753f-a2a3-48db-9044-c8a05e2a5f09",
       "name": "Upload Complete",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         10528,
         1232
-      ]
+      ],
+      "notes": "Extracts video ID from Upload to YouTube output. Fails fast if upload did not return an id."
     },
     {
       "parameters": {
@@ -419,7 +386,7 @@
         "url": "={{ $('Parse Pipeline Result').item.json.apiBase }}/youtube/uploaded",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ run_id: $json.runId, video_id: $json.youtubeVideoId, title: $('Parse Pipeline Result').item.json.title }) }}",
+        "jsonBody": "={{ JSON.stringify({ run_id: $('Upload Complete').first().json.runId, video_id: $('Upload Complete').first().json.youtubeVideoId, title: $('Parse Pipeline Result').item.json.title }) }}",
         "options": {
           "timeout": 30000
         }
@@ -436,13 +403,29 @@
     },
     {
       "parameters": {
+        "resume": "timeInterval",
+        "amount": 90,
+        "unit": "seconds"
+      },
+      "id": "a1b2c3d4-0012-4000-8000-000000000012",
+      "name": "Wait Before Comment",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "notes": "90s delay so YouTube can finish processing before the engagement comment is posted.",
+      "position": [
+        3740,
+        320
+      ]
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "youTubeOAuth2Api",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ snippet: { videoId: $json.youtubeVideoId, topLevelComment: { snippet: { textOriginal: ($('Parse Pipeline Result').item.json.youtubeComment || 'Which part did you like the most? Tell us in the comments!') } } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ snippet: { videoId: $('Upload Complete').first().json.youtubeVideoId, topLevelComment: { snippet: { textOriginal: ($('Parse Pipeline Result').item.json.youtubeComment || 'Which part did you like the most? Tell us in the comments!') } } } }) }}",
         "options": {
           "timeout": 30000
         }
@@ -452,10 +435,34 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3860,
+        3980,
         320
       ],
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 30000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Parse Pipeline Result').item.json.apiBase }}/youtube/comment-posted",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ video_id: $('Upload Complete').first().json.youtubeVideoId }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0013-4000-8000-000000000013",
+      "name": "Mark Comment Posted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        4100,
+        320
+      ]
     }
   ],
   "pinData": {},
@@ -645,7 +652,29 @@
             "index": 0
           },
           {
+            "node": "Wait Before Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Comment": {
+      "main": [
+        [
+          {
             "node": "Post Engagement Comment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Engagement Comment": {
+      "main": [
+        [
+          {
+            "node": "Mark Comment Posted",
             "type": "main",
             "index": 0
           }

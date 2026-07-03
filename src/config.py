@@ -93,6 +93,32 @@ class AnalyticsConfig(BaseModel):
     min_videos_for_feedback: int = 4       # need this many videos with stats before feeding the LLM
     min_stat_age_hours: int = 48           # only judge videos at least this old (early stats are noise)
     feedback_top_n: int = 3                # top/bottom titles shown to the SEO prompt
+    engagement_comment_en: str = (
+        "Which part did you like the most? Tell us in the comments!"
+    )
+    engagement_comment_hi: str = (
+        "आपको सबसे अच्छा कौन सा हिस्सा लगा? कमेंट में बताइए!"
+    )
+    engagement_comment_pool_en: list[str] = Field(
+        default_factory=lambda: [
+            "Which part did you like the most? Tell us in the comments!",
+            "What was your favorite moment in this video?",
+            "Did this story surprise you? Let us know below!",
+            "Which character or moment stood out to you?",
+            "Would you watch a part 2? Comment yes or no!",
+            "What should we cover next? Drop your ideas!",
+        ]
+    )
+    engagement_comment_pool_hi: list[str] = Field(
+        default_factory=lambda: [
+            "आपको सबसे अच्छा कौन सा हिस्सा लगा? कमेंट में बताइए!",
+            "इस वीडियो का सबसे पसंदीदा पल कौन सा था?",
+            "क्या इस कहानी ने आपको हैरान किया? नीचे बताइए!",
+            "कौन सा पल या किरदार सबसे यादगार लगा?",
+            "क्या आप पार्ट 2 देखना चाहेंगे? हाँ या ना लिखिए!",
+            "अगली वीडियो में क्या देखना चाहते हैं? सुझाव दीजिए!",
+        ]
+    )
 
 
 class LLMConfig(BaseModel):

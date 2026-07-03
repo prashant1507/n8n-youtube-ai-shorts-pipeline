@@ -195,6 +195,8 @@ Output lands in `output/YYYYMMDD_HHMMSS_xxxxxx/final.mp4` (or `final_subtitled.m
 
 Import `n8n/video-pipeline-youtube.json` into n8n, set **Configure Job** paths, attach YouTube OAuth, and schedule.
 
+For view-stats feedback, also import `n8n/youtube-analytics-sync.json` (see [Analytics feedback loop](#analytics-feedback-loop--title-ab-testing)).
+
 ---
 
 ## Video tiers
@@ -250,8 +252,12 @@ python -m src.pipeline --stage clips --from-run output/YYYYMMDD_HHMMSS_xxx --tie
 | `POST` | `/generate`           | Full pipeline in one call                             |
 | `GET`  | `/video/{run_id}`     | Download final MP4 (for Docker n8n upload)            |
 | `POST` | `/youtube/uploaded`   | Record an upload (`{"run_id", "video_id", "title"}`)  |
-| `POST` | `/youtube/sync-stats` | Fetch fresh YouTube stats for all recorded uploads    |
-| `GET`  | `/youtube/report`     | Views/day ranking + per-title-style aggregates        |
+| `GET`  | `/youtube/uploads`    | List `video_id`s from `records/uploads.csv` (local API, no OAuth) |
+| `POST` | `/youtube/push-stats` | Merge stats from n8n (`{"stats": [{video_id, views, ...}]}`) |
+| `POST` | `/youtube/sync-stats` | Optional: fetch stats via `YOUTUBE_API_KEY` on the API host |
+| `GET`  | `/youtube/pending-comments` | All uploads — script `youtube_comment` or pool pick from `default.yaml` |
+| `POST` | `/youtube/comment-posted`   | Mark `comment_posted_at` after a comment is posted |
+| `GET`  | `/youtube/report`             | Views/day ranking + per-title-style aggregates        |
 
 Step retries (API-side, for long GPU jobs):
 
@@ -300,22 +306,42 @@ The pipeline learns from real view data instead of generating metadata blindly:
    (`records/title_style_rotation.json`). The SEO LLM writes one title per style and the
    assigned style is published. The style is saved in `script.json` as `title_style`.
 2. **Upload registry**: after upload, the n8n workflow's `Record Upload` node calls
-   `POST /youtube/uploaded`, which stores the video in `records/uploads.json` along with
-   its title, style, hook, language, and theme.
-3. **Stats sync**: the `youtube-analytics-sync.json` n8n workflow (daily, 06:30) calls
-   `POST /youtube/sync-stats`, which pulls views/likes/comments from the YouTube Data API v3.
-   Set a Data API key in the environment where the API server runs:
-   `export YOUTUBE_API_KEY=...` before `scripts/start-n8n-api.sh`.
-   Manual alternative: `python -m src.youtube_analytics sync` / `report`.
+   `POST /youtube/uploaded`, which appends a row to **`records/uploads.csv`** (title, style,
+   hook, language, theme, latest views/likes/comments). Historical stat snapshots go in
+   **`records/upload_stats.csv`**.
+3. **Stats sync**: import `n8n/youtube-analytics-sync.json` (daily, **22:00** / 10 PM). Flow:
+   - **Get Uploads** → `GET /youtube/uploads` (local API, **no OAuth**)
+   - **Fetch YouTube Stats** → Google Data API with **same YouTube OAuth** as upload
+   - **Push Stats** → `POST /youtube/push-stats` (no `YOUTUBE_API_KEY` on your Mac)
+
+   Set **Configure** → `pipelineApiBase` to `http://host.docker.internal:8765` (match your API port).
+
+   Optional API-key fallback: `export YOUTUBE_API_KEY=...` + `POST /youtube/sync-stats`.
+
+   CLI:
+
+   ```bash
+   source flux-venv/bin/activate
+   python -m src.youtube_analytics sync      # fetch stats (needs YOUTUBE_API_KEY)
+   python -m src.youtube_analytics report    # views/day ranking
+   python -m src.youtube_analytics backfill  # rebuild uploads.csv from output/ + channel
+   ```
+
+   **Backfill** matches `output/*/final.mp4` runs to your channel by title (needs `yt-dlp`:
+   `brew install yt-dlp`). Override channel with `YOUTUBE_CHANNEL_URL` if needed.
 4. **Prompt feedback**: once at least `analytics.min_videos_for_feedback` videos are
    48+ hours old with stats, the SEO prompt receives the top and bottom titles by
    views/day plus per-style averages, so future titles learn from what actually worked.
 
 The workflows also post an LLM-written engagement question (`youtube_comment` in
 `script.json`) as a comment right after upload via the `Post Engagement Comment` node.
+The workflow waits **90 seconds** after upload (YouTube processing), then retries the comment up to **3 times** (30s apart) if it fails.
 The same question is appended to the video description. Note: the YouTube API cannot
 pin comments, so pin it manually when you want it at the top. The comment node uses the
 same YouTube OAuth credential as the upload node; select it once in the n8n UI.
+
+**Catch-up comments:** import `n8n/youtube-engagement-comments.json` (every **2 days at 16:00** / 4 PM).
+It posts `youtube_comment` from `output/{run_id}/script.json` when that folder exists; otherwise a **random line from the engagement pool** in `default.yaml` (`engagement_comment_pool_en` / `engagement_comment_pool_hi` — pick varies by video and run day). **Every** upload with a valid `video_id` is included on each run, even if `comment_posted_at` is already set (reruns post again).
 
 ---
 
@@ -328,6 +354,7 @@ n8n-youtube/
 ├── src/
 │   ├── pipeline.py           # Orchestrator + CLI
 │   ├── n8n_api.py            # HTTP API for n8n
+│   ├── youtube_analytics.py  # Upload registry (CSV), stats sync, SEO feedback
 │   ├── script_generator.py   # Two-step LLM: story → image prompts
 │   ├── quality_agent.py      # Optional LLM reviewer
 │   ├── tts.py / music.py     # Audio generation
@@ -339,12 +366,14 @@ n8n-youtube/
 │   ├── run-pipeline-step.sh  # Single stage (n8n)
 │   └── run-pipeline-for-n8n.sh
 ├── n8n/
-│   └── video-pipeline-youtube.json
+│   ├── video-pipeline-youtube.json
+│   └── youtube-analytics-sync.json
 ├── requirements.txt          # flux-venv
 └── requirements-image.txt    # image-venv (FLUX / transformers 5)
 ```
 
-Generated at runtime (gitignored): `output/`, `records/`, `models/`, `*-venv/`.
+Generated at runtime (gitignored): `output/`, `records/` (`uploads.csv`, `upload_stats.csv`,
+`stories.json`, `theme_rotation.json`, …), `models/`, `*-venv/`.
 
 ---
 

@@ -1,0 +1,334 @@
+{
+  "name": "YouTube Engagement Comments | 4 Days",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 4,
+              "triggerAtHour": 16
+            }
+          ]
+        }
+      },
+      "id": "9c01ca7c-1d3a-4409-bea8-667979a1acf0",
+      "name": "Schedule Every 2 Days",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        256
+      ],
+      "notes": "Runs every 2 days at 16:00 (4 PM) in the n8n instance timezone."
+    },
+    {
+      "parameters": {},
+      "id": "acfdc51a-6b1a-4c06-a328-c91997f8ea7d",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg1",
+              "name": "pipelineApiBase",
+              "value": "http://host.docker.internal:8765",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7b59e677-f5f0-4561-814c-a678b50e7d11",
+      "name": "Configure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pipelineApiBase }}/youtube/pending-comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "27bba537-4675-4439-b56e-2647dd830796",
+      "name": "Get Pending Comments",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        544,
+        368
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "LM5QCmwOeJLruJaV",
+          "name": "YouTube account"
+        }
+      },
+      "notes": "Local API — Authentication: None. Returns videos with script.json youtube_comment and empty comment_posted_at."
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Configure').first().json.pipelineApiBase;\nconst payload = $input.first().json;\nconst items = payload.items || [];\nif (!items.length) {\n  return [{ json: { pipelineApiBase: base, skip: true, pending: 0 } }];\n}\nreturn items.map((item) => ({\n  json: {\n    pipelineApiBase: base,\n    skip: false,\n    video_id: item.video_id,\n    run_id: item.run_id,\n    title: item.title,\n    comment_text: item.comment_text,\n  },\n}));"
+      },
+      "id": "b4342972-0fb7-4ee0-85c4-6561323f83fd",
+      "name": "Expand Pending",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "skip1",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f541d53c-029e-478c-8984-8bc17e532d8b",
+      "name": "Has Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ snippet: { videoId: $json.video_id, topLevelComment: { snippet: { textOriginal: $json.comment_text } } } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "e390ed7e-21b0-4cef-be69-3ced48ee24b2",
+      "name": "Post Comment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        256
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "LM5QCmwOeJLruJaV",
+          "name": "YouTube account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "YouTube OAuth2 API — reuses youtube_comment from script.json via pending-comments API."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Expand Pending').item.json.pipelineApiBase }}/youtube/comment-posted",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ video_id: $('Expand Pending').item.json.video_id }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "f4275c9e-2600-46f5-bf28-41d365ce1a13",
+      "name": "Mark Comment Posted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1504,
+        256
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "b9f85db8-4c9e-4af7-afc5-d27149287c7c",
+      "name": "Wait Between Videos",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1744,
+        256
+      ],
+      "webhookId": "a2b40e68-3f99-4942-9a36-a95531e2d28e",
+      "notes": "Short pause between videos to reduce YouTube API rate-limit risk."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "done1",
+              "name": "status",
+              "value": "no_pending_comments",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "31544358-0063-4994-98da-0e9f5b1f7d1d",
+      "name": "Nothing Pending",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        480
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Every 2 Days": {
+      "main": [
+        [
+          {
+            "node": "Configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Comments": {
+      "main": [
+        [
+          {
+            "node": "Expand Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Pending": {
+      "main": [
+        [
+          {
+            "node": "Has Pending?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Pending?": {
+      "main": [
+        [
+          {
+            "node": "Post Comment",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nothing Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Comment": {
+      "main": [
+        [
+          {
+            "node": "Mark Comment Posted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Comment Posted": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "08ad5d4a-4397-431d-ac92-f2f6a0757b38",
+  "meta": {
+    "instanceId": "97d7d72d970549b3444644222e55071d7e4d1da402333c03e56e65ba4e6752ae"
+  },
+  "nodeGroups": [],
+  "id": "1O9i2wlIyVdRxc5p",
+  "tags": []
+}

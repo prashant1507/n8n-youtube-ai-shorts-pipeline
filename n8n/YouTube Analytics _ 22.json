@@ -1,0 +1,313 @@
+{
+  "name": "YouTube Analytics | 22",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 22
+            }
+          ]
+        }
+      },
+      "id": "1e9354c2-2a55-424c-9f17-9125ddc6e12a",
+      "name": "Schedule Daily",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1760,
+        544
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "d8327293-3ec4-43a6-827f-96ba91ecca0d",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg1",
+              "name": "pipelineApiBase",
+              "value": "http://host.docker.internal:8765",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b0f53ab2-b0b2-472b-92cb-c6f56f5f90bb",
+      "name": "Configure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1984,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.pipelineApiBase }}/youtube/uploads",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "da2d0821-025e-42c0-a636-46fdfb8b4736",
+      "name": "Get Uploads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2208,
+        640
+      ],
+      "notes": "Local pipeline API only — Authentication: None.\nDo NOT use YouTube OAuth here (that is for Fetch YouTube Stats).\nDefault port: 8765 (match N8N_API_PORT / pipelineApiBase)."
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Configure').first().json.pipelineApiBase;\nconst ids = $input.first().json.video_ids || [];\nif (!ids.length) {\n  return [{ json: { pipelineApiBase: base, ids: '', skip: true } }];\n}\nconst batches = [];\nfor (let i = 0; i < ids.length; i += 50) {\n  batches.push({\n    pipelineApiBase: base,\n    ids: ids.slice(i, i + 50).join(','),\n    skip: false,\n  });\n}\nreturn batches.map((b) => ({ json: b }));"
+      },
+      "id": "62328038-2a8d-456b-8b44-8d153a0c57fb",
+      "name": "Build Batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2432,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "skip1",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3b16949c-bdd4-4939-8d51-987e0474c0a0",
+      "name": "Has Videos?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/youtube/v3/videos?part=statistics&id={{ $json.ids }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "a754ef88-05dc-4df0-a496-f54744084154",
+      "name": "Fetch YouTube Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        544
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "LM5QCmwOeJLruJaV",
+          "name": "YouTube account"
+        }
+      },
+      "notes": "YouTube Data API — set Authentication to Predefined Credential Type → youTubeOAuth2Api (same credential as upload workflow)."
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Configure').first().json.pipelineApiBase;\nconst items = $input.first().json.items || [];\nconst stats = items.map((item) => ({\n  video_id: item.id,\n  views: Number(item.statistics?.viewCount || 0),\n  likes: Number(item.statistics?.likeCount || 0),\n  comments: Number(item.statistics?.commentCount || 0),\n}));\nreturn [{ json: { pipelineApiBase: base, stats } }];"
+      },
+      "id": "2a39ec6e-c52b-4db4-b60a-7395177fe5f5",
+      "name": "Format Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.pipelineApiBase }}/youtube/push-stats",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ stats: $json.stats }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "82b50e71-b953-4e2e-a29d-75f643700e92",
+      "name": "Push Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3328,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "done1",
+              "name": "status",
+              "value": "no_uploads",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "86dbcba9-8593-485c-a10b-30a8f6d7a0a4",
+      "name": "No Uploads",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2880,
+        736
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Daily": {
+      "main": [
+        [
+          {
+            "node": "Configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test": {
+      "main": [
+        [
+          {
+            "node": "Configure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure": {
+      "main": [
+        [
+          {
+            "node": "Get Uploads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Uploads": {
+      "main": [
+        [
+          {
+            "node": "Build Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Batches": {
+      "main": [
+        [
+          {
+            "node": "Has Videos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Videos?": {
+      "main": [
+        [
+          {
+            "node": "Fetch YouTube Stats",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Uploads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch YouTube Stats": {
+      "main": [
+        [
+          {
+            "node": "Format Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Stats": {
+      "main": [
+        [
+          {
+            "node": "Push Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3c7bfe69-0d61-4246-aae0-d6c4c1c1901b",
+  "meta": {
+    "instanceId": "97d7d72d970549b3444644222e55071d7e4d1da402333c03e56e65ba4e6752ae"
+  },
+  "nodeGroups": [],
+  "id": "f3lOhuGCYcSBFnVn",
+  "tags": []
+}
