@@ -2,10 +2,20 @@
 
 from __future__ import annotations
 
+import re
 import textwrap
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+
+_DEVANAGARI_RE = re.compile(r"[ऀ-ॿ]")
+
+# (path, regular face index, bold face index) — Arial has no Devanagari glyphs
+_DEVANAGARI_FONTS = (
+    ("/System/Library/Fonts/Supplemental/ITFDevanagari.ttc", 0, 1),
+    ("/System/Library/Fonts/Supplemental/DevanagariMT.ttc", 0, 1),
+    ("/System/Library/Fonts/Supplemental/Devanagari Sangam MN.ttc", 0, 0),
+)
 
 
 def _format_ts(seconds: float) -> str:
@@ -34,7 +44,18 @@ def write_srt(scenes: list[dict], output_path: Path) -> Path:
     return output_path
 
 
-def _load_font(size: int, black: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+def _load_font(
+    size: int,
+    black: bool = False,
+    text: str = "",
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    if text and _DEVANAGARI_RE.search(text):
+        for path, regular_idx, bold_idx in _DEVANAGARI_FONTS:
+            try:
+                return ImageFont.truetype(path, size, index=bold_idx if black else regular_idx)
+            except OSError:
+                continue
+
     black_paths = (
         "/System/Library/Fonts/Supplemental/Arial Black.ttf",
         "/Library/Fonts/Arial Black.ttf",
@@ -96,7 +117,7 @@ def render_caption_overlay(
     pill_alpha: int = 150,
 ) -> Image.Image:
     """Punchy caption: bold white text on a tight rounded pill (full-width strip)."""
-    font = _load_font(font_size, black=False)
+    font = _load_font(font_size, black=False, text=text)
     max_chars = max(8, int((video_width - margin_x * 2) / (font_size * 0.58)))
     wrapped = textwrap.fill(text.strip(), width=max_chars)
     spacing = 8
@@ -128,7 +149,7 @@ def render_hook_overlay(
     pill_alpha: int = 120,
 ) -> Image.Image:
     """Big attention-grabbing hook card: heavy accent-yellow text with a thick outline."""
-    font = _load_font(font_size, black=True)
+    font = _load_font(font_size, black=True, text=text)
     max_chars = max(6, int((video_width - margin_x * 2) / (font_size * 0.62)))
     wrapped = textwrap.fill(text.strip(), width=max_chars)
     spacing = 10
@@ -165,7 +186,7 @@ def render_subtitle_overlay(
     bar_padding: int = 16,
 ) -> Image.Image:
     """Render a subtitle bar as RGBA image (full video width)."""
-    font = _load_font(font_size)
+    font = _load_font(font_size, text=text)
     max_chars = max(24, int((video_width - margin_x * 2) / (font_size * 0.45)))
     wrapped = textwrap.fill(text.strip(), width=max_chars)
 

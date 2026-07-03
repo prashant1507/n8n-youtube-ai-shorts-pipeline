@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 
@@ -108,32 +109,20 @@ def generate_voice(
     audio = _concat_wavs(chunks)
 
     model, _, _ = _load_model(config)
-    sf.write(str(output_path), audio, model.config.sampling_rate)
-    logger.info("Saved voice to %s (%.1fs)", output_path, len(audio) / model.config.sampling_rate)
+    sr = model.config.sampling_rate
+    sf.write(str(output_path), audio, sr)
+    # Exact per-segment durations — align_scene_durations prefers these over char-count estimates
+    (output_path.parent / "voice_timings.json").write_text(
+        json.dumps({"segment_durations": [round(len(c) / sr, 3) for c in chunks]}, indent=2),
+        encoding="utf-8",
+    )
+    logger.info("Saved voice to %s (%.1fs)", output_path, len(audio) / sr)
     return output_path
 
 
 def unload_model() -> None:
     global _model, _tokenizer, _description_tokenizer
-    if _model is not None:
-        del _model
-    if _tokenizer is not None:
-        del _tokenizer
-    if _description_tokenizer is not None:
-        del _description_tokenizer
     _model = _tokenizer = _description_tokenizer = None
-    import gc
+    from .memory import release_gpu_memory
 
-    gc.collect()
-    if torch.backends.mps.is_available():
-        torch.mps.empty_cache()
-    elif torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    if torch.backends.mps.is_available():
-        torch.mps.empty_cache()
-    elif torch.cuda.is_available():
-        torch.cuda.empty_cache()
-    if torch.backends.mps.is_available():
-        torch.mps.empty_cache()
-    elif torch.cuda.is_available():
-        torch.cuda.empty_cache()
+    release_gpu_memory()

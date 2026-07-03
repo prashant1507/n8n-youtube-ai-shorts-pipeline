@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from .config import PipelineConfig
-from .media import probe_duration
+from .media import AAC_BITRATE, X264_QUALITY, probe_duration
 from .subtitles import (
     chunk_text,
     render_caption_overlay,
@@ -40,7 +40,7 @@ def concat_clips(clips: list[Path], output_path: Path, crossfade_sec: float = 0.
         "ffmpeg", "-y",
         "-f", "concat", "-safe", "0",
         "-i", str(list_file),
-        "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-c:v", "libx264", *X264_QUALITY, "-pix_fmt", "yuv420p",
         str(output_path),
     ])
     return output_path
@@ -80,8 +80,8 @@ def assemble_final(
         "-i", str(video_path),
         "-i", str(audio_path),
         "-t", str(dur),
-        "-c:v", "libx264",
-        "-c:a", "aac",
+        "-c:v", "libx264", *X264_QUALITY,
+        "-c:a", "aac", *AAC_BITRATE,
         "-shortest",
         "-pix_fmt", "yuv420p",
         str(output_path),
@@ -145,6 +145,7 @@ def overlay_subtitle_on_clip(
         "-i", str(clip_path.resolve()),
         "-i", str(sub_png.resolve()),
         "-filter_complex", f"[0:v][1:v]overlay=0:{_subtitle_overlay_y()}",
+        "-c:v", "libx264", *X264_QUALITY,
         "-c:a", "copy",
         "-pix_fmt", "yuv420p",
         str(output_path.resolve()),
@@ -185,6 +186,7 @@ def _overlay_timed_pngs(
         "-filter_complex", filt,
         "-map", f"[{label}]",
         "-map", "0:a?",
+        "-c:v", "libx264", *X264_QUALITY,
         "-c:a", "copy",
         "-pix_fmt", "yuv420p",
         str(output_path.resolve()),
@@ -200,8 +202,13 @@ def burn_dynamic_on_clip(
     *,
     hook_text: str | None = None,
     is_first: bool = False,
+    captions: bool = True,
 ) -> Path:
-    """Burn punchy chunked captions (and, on the first clip, the on-screen hook)."""
+    """Burn punchy chunked captions (and, on the first clip, the on-screen hook).
+
+    captions=False burns only the hook — used for Hindi, where on-screen
+    captions are disabled but the retention hook should still appear.
+    """
     shorts = config.shorts
     width, height = config.width, config.height
     scale = height / 1920.0
@@ -210,7 +217,7 @@ def burn_dynamic_on_clip(
     tmp_pngs: list[Path] = []
 
     text = scene.get("narration_segment", "").strip()
-    chunks = chunk_text(text, shorts.caption_chunk_words) if text else []
+    chunks = chunk_text(text, shorts.caption_chunk_words) if (text and captions) else []
     if chunks:
         cap_font = max(20, int(round(28 * shorts.caption_font_scale * scale)))
         cap_y = f"H*{shorts.caption_y_ratio:.3f}-h/2"
@@ -257,6 +264,7 @@ def burn_subtitles_on_clips(
     font_size: int = 28,
     config: PipelineConfig | None = None,
     hook_text: str | None = None,
+    captions: bool = True,
 ) -> list[Path]:
     """Add captions to each clip. Uses dynamic chunked captions + hook when config is given."""
     subtitled_dir = output_dir / "clips_subtitled"
@@ -272,7 +280,7 @@ def burn_subtitles_on_clips(
         if use_dynamic:
             burn_dynamic_on_clip(
                 clip, scene, out, config,
-                hook_text=hook_text, is_first=(i == 0),
+                hook_text=hook_text, is_first=(i == 0), captions=captions,
             )
         elif text:
             overlay_subtitle_on_clip(clip, text, out, video_width, video_height, font_size)
@@ -298,7 +306,7 @@ def apply_loop_transition(video_path: Path, fade_sec: float = 0.4) -> Path:
         "ffmpeg", "-y",
         "-i", str(video_path.resolve()),
         "-t", f"{fade:.3f}",
-        "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+        "-an", "-c:v", "libx264", *X264_QUALITY, "-pix_fmt", "yuv420p",
         str(open_clip.resolve()),
     ])
     _run([
@@ -310,7 +318,7 @@ def apply_loop_transition(video_path: Path, fade_sec: float = 0.4) -> Path:
         "-map", "[v]",
         "-map", "0:a?",
         "-c:a", "copy",
-        "-c:v", "libx264",
+        "-c:v", "libx264", *X264_QUALITY,
         "-pix_fmt", "yuv420p",
         str(looped.resolve()),
     ])
@@ -341,6 +349,7 @@ def burn_subtitles(
             "ffmpeg", "-y",
             "-i", str(video_path.resolve()),
             "-vf", f"subtitles={srt_path.name}:force_style='{style}'",
+            "-c:v", "libx264", *X264_QUALITY,
             "-c:a", "copy",
             str(output_path.resolve()),
         ], cwd=str(srt_path.parent))
@@ -361,7 +370,7 @@ def burn_subtitles(
             _run([
                 "ffmpeg", "-y",
                 "-i", str(temp_video.resolve()),
-                "-c:v", "libx264",
+                "-c:v", "libx264", *X264_QUALITY,
                 "-pix_fmt", "yuv420p",
                 str(output_path.resolve()),
             ])
@@ -398,11 +407,12 @@ def subtitles_on_clips_stage(
     config: PipelineConfig,
     output_dir: Path,
     hook_text: str | None = None,
+    captions: bool = True,
 ) -> list[Path]:
     """Burn captions on each clip (dynamic chunked captions + first-clip hook)."""
     return burn_subtitles_on_clips(
         clips, scenes, output_dir, config.width, config.height,
-        config=config, hook_text=hook_text,
+        config=config, hook_text=hook_text, captions=captions,
     )
 
 
@@ -455,21 +465,24 @@ def assemble_pipeline_output(
     audio_mixed = output_dir / "audio_mixed.wav"
     final_path = output_dir / "final.mp4"
 
-    if config.subtitles and scenes:
+    want_captions = bool(config.subtitles and scenes)
+    # Hindi disables captions, but the first-clip hook should still be burned
+    want_hook = bool(scenes and hook_text and config.shorts.hook_overlay)
+    if want_captions or want_hook:
         clips = burn_subtitles_on_clips(
             clips, scenes, output_dir, config.width, config.height,
-            config=config, hook_text=hook_text,
+            config=config, hook_text=hook_text, captions=want_captions,
         )
 
-    video_raw = concat_video_stage(output_dir, prefer_subtitled_clips=bool(config.subtitles and scenes))
+    video_raw = concat_video_stage(output_dir, prefer_subtitled_clips=want_captions or want_hook)
     audio_mixed = audio_mix_stage(voice_path, music_path, output_dir, config.music.volume)
     final_path = final_mux_stage(video_raw, audio_mixed, output_dir)
 
-    if config.subtitles and scenes:
+    if want_captions:
         srt_path = output_dir / "subtitles.srt"
         write_srt(scenes, srt_path)
         subtitled = output_dir / "final_subtitled.mp4"
-        _run(["ffmpeg", "-y", "-i", str(final_path), "-c", "copy", str(subtitled)])
+        final_path.replace(subtitled)
         final_path = subtitled
 
     if config.shorts.loop_transition:

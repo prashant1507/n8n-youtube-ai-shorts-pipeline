@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 from .config import ROOT, PipelineConfig
-from .media import probe_duration
+from .media import X264_QUALITY, probe_duration
 from .venv_paths import wan_python
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def _extend_clip_to_duration(clip_path: Path, target_sec: float) -> Path:
         "-filter:v", f"setpts={factor:.4f}*PTS",
         "-an",
         "-t", str(target_sec),
-        "-c:v", "libx264",
+        "-c:v", "libx264", *X264_QUALITY,
         "-pix_fmt", "yuv420p",
         str(tmp),
     ]

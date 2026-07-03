@@ -8,6 +8,7 @@ import subprocess
 from pathlib import Path
 
 from .config import ROOT, PipelineConfig
+from .media import X264_QUALITY
 from .venv_paths import flux_python
 from .visual_prompts import prepare_scene_prompts
 
@@ -145,7 +146,7 @@ def _ken_burns_clip(
         "-vf", vf,
         "-t", str(duration_sec),
         "-pix_fmt", "yuv420p",
-        "-c:v", "libx264",
+        "-c:v", "libx264", *X264_QUALITY,
         str(output_path),
     ]
     subprocess.run(cmd, check=True, capture_output=True)

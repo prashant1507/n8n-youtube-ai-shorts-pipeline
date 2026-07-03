@@ -37,7 +37,8 @@ LM Studio (story)  →  Parler-TTS (Divya / Rani)  →  MusicGen
     - **`flux`** — FLUX.2 Klein scene images + Ken Burns zoom (default, best balance of quality and speed)
     - **`wan`** — Wan 2.2 short motion clips via [mlxgen](https://github.com/AbstractMachines/mlx-gen) (more RAM, subtle
       motion)
-- **9:16 Shorts** — 1080×1920 output with burned-in subtitles (English; Hindi skips on-screen subs)
+- **9:16 Shorts** — 1080×1920 output with burned-in subtitles (English; Hindi skips on-screen subs but keeps the
+  first-frame hook overlay)
 - **n8n integration** — HTTP API with per-stage steps, 30-minute retries, video download endpoint for Docker n8n
 - **Isolated GPU workers** — heavy models run in separate venv subprocesses to avoid OOM after TTS/music
 
@@ -220,17 +221,17 @@ motion, not full animation.
 
 Each run creates a folder under `output/{run_id}/`:
 
-| Stage       | Artifact                            | Description                     |
-|-------------|-------------------------------------|---------------------------------|
-| `script`    | `script.json`                       | Title, narration, scene prompts |
-| `voice`     | `voice.wav`                         | Parler-TTS (Divya / Rani)       |
-| `music`     | `music.wav`                         | MusicGen background             |
-| `images`    | `images/scene_*.png`                | FLUX Klein (skipped for `wan`)  |
-| `clips`     | `clips/scene_*.mp4`                 | Ken Burns or Wan                |
-| `video`     | `video_raw.mp4`                     | Concatenated clips              |
-| `subtitles` | `clips_subtitled/`, `subtitles.srt` | Burned subs (English)           |
-| `audio_mix` | `audio_mixed.wav`                   | Voice + music                   |
-| `final`     | `final.mp4`                         | Muxed Short                     |
+| Stage       | Artifact                            | Description                      |
+|-------------|-------------------------------------|----------------------------------|
+| `script`    | `script.json`                       | Title, narration, scene prompts  |
+| `voice`     | `voice.wav`, `voice_timings.json`   | Parler-TTS + exact scene timings |
+| `music`     | `music.wav`                         | MusicGen background              |
+| `images`    | `images/scene_*.png`                | FLUX Klein (skipped for `wan`)   |
+| `clips`     | `clips/scene_*.mp4`                 | Ken Burns or Wan                 |
+| `video`     | `video_raw.mp4`                     | Concatenated clips               |
+| `subtitles` | `clips_subtitled/`, `subtitles.srt` | Burned subs (Hindi: hook only)   |
+| `audio_mix` | `audio_mixed.wav`                   | Voice + music                    |
+| `final`     | `final.mp4`                         | Muxed Short                      |
 
 Run a single stage:
 

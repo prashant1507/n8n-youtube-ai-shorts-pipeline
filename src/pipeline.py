@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -213,23 +212,31 @@ def run_stage(
         return _stage_result("video", out, extra={"video_raw": str(video_raw)})
 
     if stage == "subtitles":
-        if is_hindi_language(str(script.get("language", config.language))):
-            logger.info("Hindi language: subtitles stage skipped")
-            return _stage_result("subtitles", out, skipped=True, extra={"reason": "hindi"})
-        if not config.subtitles:
-            logger.info("Subtitles disabled in config")
+        # config.subtitles is already policy-applied (Hindi and --no-subtitles turn it off),
+        # but the first-clip hook overlay is burned regardless of captions.
+        captions = bool(config.subtitles)
+        hook_text = str(script.get("hook_text") or "").strip()
+        want_hook = bool(hook_text and config.shorts.hook_overlay)
+        if not captions and not want_hook:
+            logger.info("Subtitles stage skipped: captions disabled and no hook to burn")
             return _stage_result("subtitles", out, skipped=True, extra={"reason": "disabled"})
-        progress("subtitles", 0.78, "Adding subtitles to video...")
+        progress(
+            "subtitles",
+            0.78,
+            "Adding subtitles to video..." if captions else "Burning hook overlay...",
+        )
         from .assembler import concat_clips
         from .subtitles import write_srt
 
         clips = list_scene_clips(out)
         subtitled_clips = subtitles_on_clips_stage(
-            clips, scenes, config, out, hook_text=script.get("hook_text"),
+            clips, scenes, config, out,
+            hook_text=hook_text or None, captions=captions,
         )
         subtitled_video = out / "video_subtitled.mp4"
         concat_clips(subtitled_clips, subtitled_video)
-        write_srt(scenes, out / "subtitles.srt")
+        if captions:
+            write_srt(scenes, out / "subtitles.srt")
         return _stage_result(
             "subtitles",
             out,
@@ -263,11 +270,7 @@ def run_stage(
         )
         if config.subtitles and not is_hindi_language(str(script.get("language", config.language))):
             subtitled = out / "final_subtitled.mp4"
-            subprocess.run(
-                ["ffmpeg", "-y", "-i", str(final_path), "-c", "copy", str(subtitled)],
-                check=True,
-                capture_output=True,
-            )
+            final_path.replace(subtitled)
             final_path = subtitled
         if config.shorts.loop_transition:
             from .assembler import apply_loop_transition
@@ -467,6 +470,8 @@ def main() -> None:
     payload = json.dumps(result, indent=2)
     sys.stdout.write(payload + "\n")
     sys.stdout.flush()
+    # Hard-exit: torch/MPS can leave non-daemon threads that hang normal interpreter
+    # shutdown after model use; stdout is already flushed for the n8n JSON consumers.
     os._exit(0)
 
 

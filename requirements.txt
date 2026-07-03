@@ -2,21 +2,23 @@
 # Keep transformers 4.46.x — parler-tts 0.2.2 is incompatible with transformers 5+.
 # FLUX.2 Klein images run in image-venv (requirements-image.txt).
 # Wan video clips use wan-venv (mlx-gen) as a subprocess from flux-venv.
+# Upper bounds guard the fragile parler-tts / transformers 4.46 stack against
+# breaking major releases on a fresh venv rebuild.
 
-torch>=2.5
-numpy>=1.26
-scipy>=1.11
-soundfile>=0.12
-pillow>=10.0
-pydantic>=2.0
-pyyaml>=6.0
-openai>=1.0
+torch>=2.5,<3
+numpy>=1.26,<3
+scipy>=1.11,<2
+soundfile>=0.12,<1
+pillow>=10.0,<13
+pydantic>=2.0,<3
+pyyaml>=6.0,<7
+openai>=1.0,<3
 transformers==4.46.1
-accelerate>=0.34
-safetensors>=0.4
-huggingface-hub>=0.24
-sentencepiece>=0.2.0
-protobuf>=4.25
+accelerate>=0.34,<2
+safetensors>=0.4,<1
+huggingface-hub>=0.24,<1
+sentencepiece>=0.2.0,<0.3
+protobuf>=4.25,<7
 
 # Voice: ai4bharat/indic-parler-tts (Divya EN / Rani HI in profiles/*.yaml)
 git+https://github.com/huggingface/parler-tts.git@d108732cd57788ec86bc857d99a6cabd66663d68
