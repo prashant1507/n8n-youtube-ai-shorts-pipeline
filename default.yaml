@@ -116,7 +116,7 @@ llm:
       - character
       - emotional
 
-# YouTube performance feedback loop (records/uploads.json).
+# YouTube performance feedback loop (records/uploads.csv + records/upload_stats.csv).
 # n8n records each upload via POST /youtube/uploaded; daily n8n workflow fetches stats
 # with the same YouTube OAuth credential as upload, then POST /youtube/push-stats.
 # Optional fallback: YOUTUBE_API_KEY env + POST /youtube/sync-stats.
@@ -126,3 +126,19 @@ analytics:
   min_videos_for_feedback: 4    # feed real data to the LLM only after this many measured videos
   min_stat_age_hours: 48        # ignore videos younger than this (early stats are noise)
   feedback_top_n: 3             # top/bottom titles shown to the SEO prompt
+  engagement_comment_en: "Which part did you like the most? Tell us in the comments!"
+  engagement_comment_hi: "आपको सबसे अच्छा कौन सा हिस्सा लगा? कमेंट में बताइए!"
+  engagement_comment_pool_en:
+    - "Which part did you like the most? Tell us in the comments!"
+    - "What was your favorite moment in this video?"
+    - "Did this story surprise you? Let us know below!"
+    - "Which character or moment stood out to you?"
+    - "Would you watch a part 2? Comment yes or no!"
+    - "What should we cover next? Drop your ideas!"
+  engagement_comment_pool_hi:
+    - "आपको सबसे अच्छा कौन सा हिस्सा लगा? कमेंट में बताइए!"
+    - "इस वीडियो का सबसे पसंदीदा पल कौन सा था?"
+    - "क्या इस कहानी ने आपको हैरान किया? नीचे बताइए!"
+    - "कौन सा पल या किरदार सबसे यादगार लगा?"
+    - "क्या आप पार्ट 2 देखना चाहेंगे? हाँ या ना लिखिए!"
+    - "अगली वीडियो में क्या देखना चाहते हैं? सुझाव दीजिए!"
