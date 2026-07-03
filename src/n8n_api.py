@@ -170,6 +170,15 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/health":
             self._send(200, {"ok": True, "service": "video-pipeline-api"})
             return
+        if path == "/youtube/report":
+            from .youtube_analytics import performance_report
+
+            try:
+                self._send(200, performance_report())
+            except Exception as exc:
+                logger.exception("Analytics report error")
+                self._send(500, {"error": str(exc)})
+            return
         if path.startswith("/video/"):
             run_id = path[len("/video/") :].strip("/")
             try:
@@ -185,7 +194,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = self.path.split("?", 1)[0].rstrip("/")
-        if path not in {"/generate", "/step"}:
+        if path not in {"/generate", "/step", "/youtube/uploaded", "/youtube/sync-stats"}:
             self._send(404, {"error": "not found"})
             return
 
@@ -193,6 +202,23 @@ class Handler(BaseHTTPRequestHandler):
         raw = self.rfile.read(length) if length else b"{}"
         try:
             body = json.loads(raw.decode("utf-8") or "{}")
+            if path == "/youtube/uploaded":
+                from .youtube_analytics import record_upload
+
+                rec = record_upload(
+                    run_id=str(body.get("run_id", "")).strip(),
+                    video_id=str(body.get("video_id", "")).strip(),
+                    title=str(body.get("title", "")).strip(),
+                )
+                self._send(200, {"ok": True, "upload": rec})
+                return
+            if path == "/youtube/sync-stats":
+                from .youtube_analytics import performance_report, sync_stats
+
+                result = sync_stats()
+                result["report"] = performance_report()
+                self._send(200, result)
+                return
             if path == "/step":
                 result = _run_step(body)
             else:
@@ -218,7 +244,10 @@ def main() -> None:
 
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     logger.info("Video pipeline API listening on http://%s:%s", HOST, PORT)
-    logger.info("POST /generate  POST /step  GET /health  GET /video/{run_id}")
+    logger.info(
+        "POST /generate  POST /step  POST /youtube/uploaded  POST /youtube/sync-stats  "
+        "GET /health  GET /video/{run_id}  GET /youtube/report"
+    )
     logger.info(
         "Step retries: max_tries=%d wait_sec=%d (override with N8N_STEP_MAX_TRIES / N8N_STEP_RETRY_WAIT_SEC)",
         STEP_MAX_TRIES,

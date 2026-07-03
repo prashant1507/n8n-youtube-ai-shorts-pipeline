@@ -31,6 +31,7 @@ from .story_registry import (
     recent_protagonist_names,
     recent_titles,
 )
+from .title_ab import allocate_title_style, style_definition
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,15 @@ YOUTUBE_META_SCHEMA: dict[str, Any] = {
     "properties": {
         "titles": {
             "type": "array",
-            "items": {"type": "string"},
+            "items": {
+                "type": "object",
+                "properties": {
+                    "style": {"type": "string"},
+                    "title": {"type": "string"},
+                },
+                "required": ["style", "title"],
+                "additionalProperties": False,
+            },
             "minItems": 1,
             "maxItems": 8,
         },
@@ -89,8 +98,17 @@ YOUTUBE_META_SCHEMA: dict[str, Any] = {
             "maxItems": 6,
         },
         "hook_text": {"type": "string"},
+        "engagement_question": {"type": "string"},
     },
-    "required": ["titles", "title_variants", "description", "tags", "hashtags", "hook_text"],
+    "required": [
+        "titles",
+        "title_variants",
+        "description",
+        "tags",
+        "hashtags",
+        "hook_text",
+        "engagement_question",
+    ],
     "additionalProperties": False,
 }
 
@@ -179,14 +197,17 @@ def _story_system_prompt(config: PipelineConfig) -> str:
         f"Content type: {content_type}. Tone: {config.tone}.\n\n"
         "### YOUR TASK ###\n"
         f"{task_block}\n\n"
-        "### HOOK — FIRST 1-2 SENTENCES (most important for YouTube Shorts) ###\n"
-        "The opening decides whether viewers keep watching. Make the first 1-2 sentences a strong hook:\n"
-        "- Open with a curiosity gap, a surprising claim, a vivid problem, a question, or a mini-cliffhanger.\n"
-        "- Create an instant reason to keep watching within the first 3 seconds.\n"
-        "- Hint at the payoff to come, but do NOT reveal the ending.\n"
+        "### HOOK: THE FIRST SENTENCE DECIDES EVERYTHING (YouTube Shorts) ###\n"
+        "Viewers decide to swipe away within 2 seconds. The FIRST sentence must be exactly one of:\n"
+        "- A direct question that demands an answer ('Do you know why the moon followed Kiaan home?')\n"
+        "- Immediate danger or trouble, mid-action ('The bridge started cracking under Miro's feet.')\n"
+        "- A claim that sounds impossible ('Yesterday, a snail won the city marathon.')\n"
+        "Start mid-action, with zero scene-setting before the hook.\n"
+        "The SECOND sentence must deepen the hook and hint at the payoff, without revealing the ending.\n"
         "- BANNED generic openings: 'Once upon a time', 'In a village', 'There was a', 'Long ago', "
         "'One day' as the very first words.\n"
-        "- Keep the hook concrete and easy to say aloud — no meta narration like 'In this story'.\n\n"
+        "- Keep the hook concrete and easy to say aloud, with no meta narration like 'In this story' "
+        "or 'Let me tell you'.\n\n"
         "### ENDING — LOOP-FRIENDLY ###\n"
         "End on a warm, satisfying note whose mood or image echoes the opening, so the short feels good to replay.\n\n"
         f"### NARRATION RULES (critical for TTS) ###\n"
@@ -237,7 +258,9 @@ def _image_prompts_system(config: PipelineConfig) -> str:
         "### CHARACTER CONSISTENCY (highest priority) ###\n"
         "1. Before writing prompts, define a fixed 'Character Anchor' for each recurring character:\n"
         "   age, skin tone, build, hair, face, clothing colors, and one distinctive detail.\n"
-        "2. Scene 1 MUST be a clear establishing shot showing all main characters with their full anchors.\n"
+        "2. Scene 1 MUST show all main characters with their full anchors AND double as the video cover:\n"
+        "   it is the first frame viewers see before deciding to swipe, so depict the story's most\n"
+        "   dramatic, eye-catching moment (peak action, wonder, or danger), never a calm posed shot.\n"
         "3. Scenes 2 onward: paste the EXACT same anchor text for each character — word for word, do not paraphrase.\n"
         "4. NO character names — physical descriptions only.\n\n"
         "### VISUAL VARIETY (while keeping same characters) ###\n"
@@ -251,7 +274,8 @@ def _image_prompts_system(config: PipelineConfig) -> str:
         f"Visual world: {visual_style}.\n"
         "Describe scenes only — do NOT add Pixar, 3D, or render-style tags (added later).\n\n"
         "### SCENE RULES ###\n"
-        f"1. Produce exactly {scene_count} prompts in strict chronological story order.\n"
+        f"1. Produce exactly {scene_count} prompts. Scene 1 is the dramatic cover moment; "
+        "scenes 2 onward follow strict chronological story order.\n"
         "2. One distinct story moment per prompt — subject, action, setting, shot type, lighting.\n"
         "3. 25–35 words each — complete phrases; do not cut off mid-sentence.\n"
         "4. All image_prompts must be in ENGLISH.\n"
@@ -275,7 +299,8 @@ def _image_prompts_user(config: PipelineConfig, script: str) -> str:
     scene_count = target_scene_count(config)
     return (
         f"Storyboard exactly {scene_count} illustrations for this narration.\n"
-        "Scene 1: clear establishing shot — define every main character with a detailed fixed physical description.\n"
+        "Scene 1: the COVER shot. Define every main character with a detailed fixed physical description, "
+        "and stage the story's most dramatic, eye-catching moment (this frame must stop a viewer from swiping).\n"
         "Scenes 2–N: reuse those EXACT descriptions word-for-word in every prompt so characters never change appearance.\n"
         "Vary camera angle, location, and action each scene — but characters must look identical throughout.\n"
         "NO NAMES — physical descriptions only.\n\n"
@@ -480,30 +505,44 @@ def _generate_unique_story(
     )
 
 
-def _youtube_meta_system(config: PipelineConfig) -> str:
+def _youtube_meta_system(config: PipelineConfig, title_style: str = "") -> str:
     lang = language_label(config)
     seo = config.llm.seo
     content_type = theme_key(config.theme)
     if lang == "hindi":
         lang_rule = (
-            "Write titles (upload), description and hook_text in natural Hindi (Devanagari). "
+            "Write titles (upload), description, hook_text and engagement_question in natural Hindi (Devanagari). "
             "Write title_variants, tags and hashtags in English only (no Hindi script). "
             "title_variants are English alternate YouTube titles for SEO — same story, English wording."
         )
     else:
-        lang_rule = "Write titles, title_variants, description, hook_text, tags and hashtags in English."
+        lang_rule = (
+            "Write titles, title_variants, description, hook_text, tags, hashtags "
+            "and engagement_question in English."
+        )
+
+    styles = [s.lower().strip() for s in seo.title_styles if s.strip()] or ["question"]
+    style_lines = "\n".join(f"- {s}: {style_definition(s)}" for s in styles)
+    assigned_line = (
+        f"This video will be PUBLISHED with the '{title_style}' style title, "
+        "so make that one the strongest.\n"
+        if title_style
+        else ""
+    )
 
     return (
         "You are a YouTube Shorts growth strategist who writes packaging (titles, "
         "descriptions, tags) that maximizes click-through rate and reach.\n"
         f"Content type: {content_type}. Audience: family/kids-friendly viewers.\n\n"
         "### TITLES (upload) ###\n"
-        f"Propose {seo.title_variants} DISTINCT upload title candidates in the story language, strongest first.\n"
+        "Write ONE upload title candidate for EACH of these styles, in the story language.\n"
+        f"{style_lines}\n"
+        f"{assigned_line}"
         f"- Each title <= {seo.max_title_chars} characters.\n"
-        "- Use curiosity gaps, specificity, emotion, or a light question — but never mislead "
-        "(the title must match the actual story).\n"
+        "- Never mislead: the title must match the actual story.\n"
         "- No ALL CAPS words, no clickbait lies, no emojis, family-safe.\n"
-        "- Do not put the word 'Shorts' or hashtags inside the titles.\n\n"
+        "- Do not put the word 'Shorts' or hashtags inside the titles.\n"
+        '- Return as objects: {"style": "question", "title": "..."}.\n\n'
         "### TITLE VARIANTS (English alternates) ###\n"
         f"Propose {seo.title_variants} DISTINCT English alternate titles (same story, English only). "
         "For Hindi stories these must be English; for English stories match the upload titles.\n"
@@ -521,20 +560,46 @@ def _youtube_meta_system(config: PipelineConfig) -> str:
         "Theme-specific tags are welcome.\n\n"
         "### HOOK_TEXT ###\n"
         "A punchy on-screen hook of at most 8 words for the first frame — bold and curiosity-driving.\n\n"
+        "### ENGAGEMENT_QUESTION ###\n"
+        "One short, open question to viewers about the story (max 12 words) that invites comments, "
+        "e.g. 'What would you have done?'. It is posted as a comment after upload and added to the "
+        "description, so it must stand alone and be family-safe.\n\n"
         f"### LANGUAGE ###\n{lang_rule}\n\n"
         "### OUTPUT PROTOCOL ###\n"
         "Return ONLY raw JSON on a single line. It must begin with '{' and end with '}'.\n"
-        'Keys: "titles" (array), "title_variants" (array), "description" (string), "tags" (array), '
-        '"hashtags" (array), "hook_text" (string).'
+        'Keys: "titles" (array of {style, title}), "title_variants" (array), "description" (string), '
+        '"tags" (array), "hashtags" (array), "hook_text" (string), "engagement_question" (string).'
     )
 
 
 def _youtube_meta_user(config: PipelineConfig, title: str, script_text: str) -> str:
-    return (
-        f"STORY TITLE (working): {title}\n\n"
-        f"STORY NARRATION:\n{script_text}\n\n"
-        "Write the YouTube packaging for this Short now."
-    )
+    feedback = _analytics_feedback(config)
+    parts = [
+        f"STORY TITLE (working): {title}",
+        f"STORY NARRATION:\n{script_text}",
+    ]
+    if feedback:
+        parts.append(feedback)
+    parts.append("Write the YouTube packaging for this Short now.")
+    return "\n\n".join(parts)
+
+
+def _analytics_feedback(config: PipelineConfig) -> str:
+    """Real per-title view data from past uploads, once there is enough signal."""
+    if not config.analytics.enabled:
+        return ""
+    try:
+        from .youtube_analytics import seo_feedback_lines
+
+        return seo_feedback_lines(
+            language_label(config),
+            min_videos=config.analytics.min_videos_for_feedback,
+            min_age_hours=config.analytics.min_stat_age_hours,
+            top_n=config.analytics.feedback_top_n,
+        )
+    except Exception as exc:
+        logger.warning("Analytics feedback unavailable: %s", exc)
+        return ""
 
 
 _HASHTAG_CLEAN = re.compile(r"[^0-9A-Za-z]+")
@@ -621,12 +686,27 @@ def _append_hashtags_to_title(
     return base + suffix
 
 
+def _parse_styled_titles(raw: Any) -> list[tuple[str, str]]:
+    """Accept [{style, title}] (new) or plain strings (fallback) as (style, title) pairs."""
+    pairs: list[tuple[str, str]] = []
+    for item in raw or []:
+        if isinstance(item, dict):
+            style = str(item.get("style", "")).lower().strip()
+            text = str(item.get("title", "")).strip().strip('"')
+        else:
+            style, text = "", str(item).strip().strip('"')
+        if text:
+            pairs.append((style, text))
+    return pairs
+
+
 def generate_youtube_metadata(
     client: OpenAI,
     model: str,
     config: PipelineConfig,
     title: str,
     script_text: str,
+    title_style: str = "",
 ) -> dict[str, Any] | None:
     """Generate CTR/SEO packaging: title variants, description, tags, hashtags, hook text.
 
@@ -640,7 +720,7 @@ def generate_youtube_metadata(
             client,
             model,
             config,
-            _youtube_meta_system(config),
+            _youtube_meta_system(config, title_style),
             _youtube_meta_user(config, title, script_text),
             YOUTUBE_META_SCHEMA,
             max_retries=3,
@@ -649,7 +729,16 @@ def generate_youtube_metadata(
         logger.warning("YouTube metadata generation failed, using fallback: %s", exc)
         return None
 
-    raw_titles = [str(t).strip().strip('"') for t in (result.get("titles") or []) if str(t).strip()]
+    styled_titles = _parse_styled_titles(result.get("titles"))
+    if title_style:
+        # A/B rotation: publish with this run's assigned style, keep the rest as fallbacks.
+        assigned = [t for s, t in styled_titles if s == title_style]
+        others = [t for s, t in styled_titles if s != title_style]
+        raw_titles = assigned + others
+        if not assigned:
+            logger.warning("LLM returned no '%s' style title; using first candidate", title_style)
+    else:
+        raw_titles = [t for _, t in styled_titles]
     raw_titles = _dedupe_keep_order(raw_titles)
 
     raw_variants = [
@@ -680,6 +769,9 @@ def generate_youtube_metadata(
 
     description = str(result.get("description") or "").strip()
     hook_text = str(result.get("hook_text") or "").strip().strip('"')
+    engagement_question = str(result.get("engagement_question") or "").strip().strip('"')
+    if engagement_question and engagement_question not in description:
+        description = (description + "\n\n" + engagement_question).strip()
 
     base_title = _choose_youtube_title(upload_candidates, title, seo.max_title_chars)
     youtube_title = _append_hashtags_to_title(
@@ -701,11 +793,14 @@ def generate_youtube_metadata(
     return {
         "youtube_title": youtube_title,
         "youtube_title_base": base_title,
+        "title_style": title_style,
+        "title_candidates": [{"style": s, "title": t} for s, t in styled_titles],
         "title_variants": title_variants,
         "youtube_description": description,
         "youtube_tags": tags,
         "hashtags": hashtags,
         "hook_text": hook_text,
+        "youtube_comment": engagement_question,
     }
 
 
@@ -756,7 +851,13 @@ def generate_script(config: PipelineConfig) -> dict[str, Any]:
         "voice_description": _default_voice_description(config),
     }
 
-    metadata = generate_youtube_metadata(client, model, config, title, script_text)
+    title_style = ""
+    if config.llm.seo.enabled and config.llm.seo.title_ab:
+        title_style = allocate_title_style(config.llm.seo.title_styles)
+
+    metadata = generate_youtube_metadata(
+        client, model, config, title, script_text, title_style=title_style
+    )
     if metadata:
         result.update(metadata)
 

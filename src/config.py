@@ -67,6 +67,7 @@ class QualityConfig(BaseModel):
     min_score: int = 7
     max_revisions: int = 2
     temperature: float = 0.3
+    min_hook_score: int = 7  # first-sentence hook is scored separately; below this triggers a revision
 
 
 class SeoConfig(BaseModel):
@@ -79,6 +80,19 @@ class SeoConfig(BaseModel):
     youtube_title_max_chars: int = 100
     max_tags: int = 15
     temperature: float = 0.7
+    title_ab: bool = True  # rotate title styles per run so analytics can compare them
+    title_styles: list[str] = Field(
+        default_factory=lambda: ["question", "cliffhanger", "curiosity", "character", "emotional"]
+    )
+
+
+class AnalyticsConfig(BaseModel):
+    """YouTube performance feedback: uploads registry + stats sync + SEO prompt feedback."""
+
+    enabled: bool = True
+    min_videos_for_feedback: int = 4       # need this many videos with stats before feeding the LLM
+    min_stat_age_hours: int = 48           # only judge videos at least this old (early stats are noise)
+    feedback_top_n: int = 3                # top/bottom titles shown to the SEO prompt
 
 
 class LLMConfig(BaseModel):
@@ -114,6 +128,7 @@ class PipelineConfig(BaseModel):
     llm: LLMConfig
     subtitles: bool
     shorts: ShortsConfig = Field(default_factory=ShortsConfig)
+    analytics: AnalyticsConfig = Field(default_factory=AnalyticsConfig)
 
     @property
     def width(self) -> int:

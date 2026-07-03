@@ -304,7 +304,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nfunction stripTrailingSlash(s) {\n  return s.endsWith('/') ? s.slice(0, -1) : s;\n}\n\nconst config = loadConfig();\nconst hostRoot = stripTrailingSlash(String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube'));\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = stripTrailingSlash(String(config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'));\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst NL = String.fromCharCode(10);\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\n// Hashtags: prefer LLM hashtags, else derive. Strip '#', dedupe, always include shorts.\nlet hashtags = Array.isArray(script.hashtags) && script.hashtags.length\n  ? script.hashtags.slice()\n  : ['shorts', theme, langTag, 'kids', 'story'];\nhashtags = hashtags\n  .map((h) => String(h).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').trim().split(' ').filter(Boolean).join(''))\n  .filter(Boolean)\n  .map((h) => h.toLowerCase());\nif (!hashtags.includes('shorts')) hashtags.push('shorts');\nhashtags = Array.from(new Set(hashtags)).slice(0, 6);\nconst hashtagLine = hashtags.slice(0, 5).map((h) => '#' + h).join(' ');\n\nfunction buildUploadTitle(base, allTags, maxChars, hashtagCount) {\n  let titleBase = String(base || '').trim();\n  if (titleBase.includes('#')) return titleBase.slice(0, maxChars);\n  const titleTags = allTags.slice(0, hashtagCount);\n  if (!titleTags.length) return titleBase.slice(0, maxChars);\n  const suffix = ' ' + titleTags.map((h) => '#' + h).join(' ');\n  const maxBase = maxChars - suffix.length;\n  if (maxBase <= 10) return titleBase.slice(0, maxChars);\n  if (titleBase.length > maxBase) titleBase = titleBase.slice(0, maxBase - 1).trim() + '…';\n  return (titleBase + suffix).slice(0, maxChars);\n}\n\n// Title: LLM SEO title (often already includes hashtags) or base title + first LLM hashtags.\nconst titleHashtagCount = 2;\nconst titleMaxChars = 100;\nlet title = buildUploadTitle(\n  script.youtube_title || script.title || ('Kids ' + theme + ' - ' + langTag),\n  hashtags,\n  titleMaxChars,\n  titleHashtagCount,\n);\nif (title.length > titleMaxChars) title = title.slice(0, titleMaxChars - 1).trim() + '…';\n\n// Description: prefer LLM SEO description, else narration. Append hashtags. Cap ~4900 chars.\nconst narration = script.narration || script.script || '';\nconst descBody = String(script.youtube_description || narration || '').trim();\nlet description = (descBody + NL + NL + hashtagLine).trim();\nif (description.length > 4900) description = description.slice(0, 4900);\n\n// Tags: prefer LLM SEO tags, else derive. Sanitize, dedupe, obey YouTube ~500-char total budget.\nlet tagList = Array.isArray(script.youtube_tags) && script.youtube_tags.length\n  ? script.youtube_tags.slice()\n  : [theme, 'kids', 'story', 'shorts', 'hindi', 'cartoon'];\ntagList = tagList\n  .map((t) => String(t).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').split(',').join('').trim().split(' ').filter(Boolean).join(' '))\n  .filter(Boolean)\n  .map((t) => t.toLowerCase());\ntagList = Array.from(new Set(tagList));\nconst cappedTags = [];\nlet tagChars = 0;\nfor (const t of tagList) {\n  const add = (cappedTags.length ? 1 : 0) + t.length;\n  if (tagChars + add > 480) break;\n  cappedTags.push(t);\n  tagChars += add;\n  if (cappedTags.length >= 15) break;\n}\nconst tags = cappedTags.join(',');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || (stripTrailingSlash(apiBase) + '/video/' + result.run_id);\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags,\n    hashtags: hashtagLine,\n    hookText: String(script.hook_text || ''),\n    titleVariants: Array.isArray(script.title_variants) ? script.title_variants : [],\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];\n"
+        "jsCode": "const item = $input.first().json;\nconst result = item.final_video ? item : (item.body || item);\n\nif (result.error) {\n  throw new Error(result.error);\n}\nif (!result.final_video && !result.video_url) {\n  throw new Error('Pipeline response missing final_video: ' + JSON.stringify(result).slice(0, 2000));\n}\n\nfunction loadConfig() {\n  for (const name of ['Validate Language', 'Configure Job']) {\n    try {\n      const row = $(name).first();\n      if (row && row.json) return row.json;\n    } catch (_) { /* node not in this execution */ }\n  }\n  return {};\n}\n\nfunction stripTrailingSlash(s) {\n  return s.endsWith('/') ? s.slice(0, -1) : s;\n}\n\nconst config = loadConfig();\nconst hostRoot = stripTrailingSlash(String(config.pipelineHostPath || '/Users/user/Downloads/n8n-youtube'));\nconst outputHostRoot = hostRoot + '/output';\nconst containerRoot = stripTrailingSlash(String(config.pipelineContainerPath || '/home/node/.n8n-files/youtube_videos'));\n\nfunction toContainerPath(p) {\n  const path = String(p || '');\n  if (path.startsWith(containerRoot + '/') || path === containerRoot) return path;\n  if (path.startsWith(outputHostRoot + '/')) return containerRoot + path.slice(outputHostRoot.length);\n  if (path.startsWith(hostRoot + '/output/')) return containerRoot + path.slice((hostRoot + '/output').length);\n  if (path.startsWith(hostRoot + '/')) return '/pipeline' + path.slice(hostRoot.length);\n  return path;\n}\n\nconst NL = String.fromCharCode(10);\nconst script = result.script || {};\nconst lang = script.language || config.lang || 'en';\nconst theme = script.content_type || script.theme || result.theme || config.theme || 'story';\nconst isHindi = lang === 'hi' || lang === 'hindi';\nconst langTag = isHindi ? 'hindi' : 'english';\n\n// Hashtags: prefer LLM hashtags, else derive. Strip '#', dedupe, always include shorts.\nlet hashtags = Array.isArray(script.hashtags) && script.hashtags.length\n  ? script.hashtags.slice()\n  : ['shorts', theme, langTag, 'kids', 'story'];\nhashtags = hashtags\n  .map((h) => String(h).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').trim().split(' ').filter(Boolean).join(''))\n  .filter(Boolean)\n  .map((h) => h.toLowerCase());\nif (!hashtags.includes('shorts')) hashtags.push('shorts');\nhashtags = Array.from(new Set(hashtags)).slice(0, 6);\nconst hashtagLine = hashtags.slice(0, 5).map((h) => '#' + h).join(' ');\n\nfunction buildUploadTitle(base, allTags, maxChars, hashtagCount) {\n  let titleBase = String(base || '').trim();\n  if (titleBase.includes('#')) return titleBase.slice(0, maxChars);\n  const titleTags = allTags.slice(0, hashtagCount);\n  if (!titleTags.length) return titleBase.slice(0, maxChars);\n  const suffix = ' ' + titleTags.map((h) => '#' + h).join(' ');\n  const maxBase = maxChars - suffix.length;\n  if (maxBase <= 10) return titleBase.slice(0, maxChars);\n  if (titleBase.length > maxBase) titleBase = titleBase.slice(0, maxBase - 1).trim() + '…';\n  return (titleBase + suffix).slice(0, maxChars);\n}\n\n// Title: LLM SEO title (often already includes hashtags) or base title + first LLM hashtags.\nconst titleHashtagCount = 2;\nconst titleMaxChars = 100;\nlet title = buildUploadTitle(\n  script.youtube_title || script.title || ('Kids ' + theme + ' - ' + langTag),\n  hashtags,\n  titleMaxChars,\n  titleHashtagCount,\n);\nif (title.length > titleMaxChars) title = title.slice(0, titleMaxChars - 1).trim() + '…';\n\n// Description: prefer LLM SEO description, else narration. Append hashtags. Cap ~4900 chars.\nconst narration = script.narration || script.script || '';\nconst descBody = String(script.youtube_description || narration || '').trim();\nlet description = (descBody + NL + NL + hashtagLine).trim();\nif (description.length > 4900) description = description.slice(0, 4900);\n\n// Tags: prefer LLM SEO tags, else derive. Sanitize, dedupe, obey YouTube ~500-char total budget.\nlet tagList = Array.isArray(script.youtube_tags) && script.youtube_tags.length\n  ? script.youtube_tags.slice()\n  : [theme, 'kids', 'story', 'shorts', 'hindi', 'cartoon'];\ntagList = tagList\n  .map((t) => String(t).replace(/[\\u0900-\\u097F]+/g, '').split('#').join('').split(',').join('').trim().split(' ').filter(Boolean).join(' '))\n  .filter(Boolean)\n  .map((t) => t.toLowerCase());\ntagList = Array.from(new Set(tagList));\nconst cappedTags = [];\nlet tagChars = 0;\nfor (const t of tagList) {\n  const add = (cappedTags.length ? 1 : 0) + t.length;\n  if (tagChars + add > 480) break;\n  cappedTags.push(t);\n  tagChars += add;\n  if (cappedTags.length >= 15) break;\n}\nconst tags = cappedTags.join(',');\n\nconst apiBase = config.pipelineApiBase || 'http://host.docker.internal:8765';\nconst videoUrl = result.video_url || (stripTrailingSlash(apiBase) + '/video/' + result.run_id);\n\nreturn [{\n  json: {\n    final_video: toContainerPath(result.final_video),\n    video_url: videoUrl,\n    output_dir: toContainerPath(result.output_dir),\n    run_id: result.run_id,\n    title,\n    description,\n    tags,\n    hashtags: hashtagLine,\n    hookText: String(script.hook_text || ''),\n    youtubeComment: String(script.youtube_comment || ''),\n    titleStyle: String(script.title_style || ''),\n    apiBase: stripTrailingSlash(apiBase),\n    titleVariants: Array.isArray(script.title_variants) ? script.title_variants : [],\n    youtubePrivacy: config.youtubePrivacy || 'public',\n    selfDeclaredMadeForKids: false,\n    lang,\n    theme,\n  },\n}];\n"
       },
       "id": "8011e7c8-bf28-43a1-aac1-257341a7ecd6",
       "name": "Parse Pipeline Result",
@@ -412,6 +412,50 @@
         43088,
         12176
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Parse Pipeline Result').item.json.apiBase }}/youtube/uploaded",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ run_id: $json.runId, video_id: $json.youtubeVideoId, title: $('Parse Pipeline Result').item.json.title }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0010-4000-8000-000000000010",
+      "name": "Record Upload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3860,
+        80
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/youtube/v3/commentThreads?part=snippet",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "youTubeOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ snippet: { videoId: $json.youtubeVideoId, topLevelComment: { snippet: { textOriginal: ($('Parse Pipeline Result').item.json.youtubeComment || 'Which part did you like the most? Tell us in the comments!') } } } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0011-4000-8000-000000000011",
+      "name": "Post Engagement Comment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3860,
+        320
+      ],
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -586,6 +630,22 @@
         [
           {
             "node": "Upload Complete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Complete": {
+      "main": [
+        [
+          {
+            "node": "Record Upload",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Engagement Comment",
             "type": "main",
             "index": 0
           }

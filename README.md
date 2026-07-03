@@ -243,12 +243,15 @@ python -m src.pipeline --stage clips --from-run output/YYYYMMDD_HHMMSS_xxx --tie
 
 ## HTTP API (n8n)
 
-| Method | Path              | Description                                           |
-|--------|-------------------|-------------------------------------------------------|
-| `GET`  | `/health`         | Liveness check                                        |
-| `POST` | `/step`           | Run one stage (`{"stage": "voice", "run_id": "..."}`) |
-| `POST` | `/generate`       | Full pipeline in one call                             |
-| `GET`  | `/video/{run_id}` | Download final MP4 (for Docker n8n upload)            |
+| Method | Path                  | Description                                           |
+|--------|-----------------------|-------------------------------------------------------|
+| `GET`  | `/health`             | Liveness check                                        |
+| `POST` | `/step`               | Run one stage (`{"stage": "voice", "run_id": "..."}`) |
+| `POST` | `/generate`           | Full pipeline in one call                             |
+| `GET`  | `/video/{run_id}`     | Download final MP4 (for Docker n8n upload)            |
+| `POST` | `/youtube/uploaded`   | Record an upload (`{"run_id", "video_id", "title"}`)  |
+| `POST` | `/youtube/sync-stats` | Fetch fresh YouTube stats for all recorded uploads    |
+| `GET`  | `/youtube/report`     | Views/day ranking + per-title-style aggregates        |
 
 Step retries (API-side, for long GPU jobs):
 
@@ -271,7 +274,8 @@ All defaults live in **`default.yaml`** (validated by Pydantic in `src/config.py
 | `voice`  | Parler-TTS model + per-theme voice descriptions (Divya / Rani)             |
 | `music`  | MusicGen model, prompt, mix volume                                         |
 | `video`  | Tier, resolution, FLUX/Wan model paths, Ken Burns motion                   |
-| `llm`    | LM Studio URL, model name, quality reviewer (`min_score`, `max_revisions`) |
+| `llm`    | LM Studio URL, model name, quality reviewer (`min_score`, `min_hook_score`, `max_revisions`) |
+| `analytics` | YouTube feedback loop (`min_videos_for_feedback`, `min_stat_age_hours`) |
 
 CLI overrides:
 
@@ -284,6 +288,34 @@ python -m src.pipeline \
   --themes-csv "story,joke,bedtime,fantasy" \
   --no-subtitles
 ```
+
+---
+
+## Analytics feedback loop & title A/B testing
+
+The pipeline learns from real view data instead of generating metadata blindly:
+
+1. **Title A/B rotation** (`llm.seo.title_ab`): each run is assigned one title style
+   (question, cliffhanger, curiosity, character, emotional) via serial rotation
+   (`records/title_style_rotation.json`). The SEO LLM writes one title per style and the
+   assigned style is published. The style is saved in `script.json` as `title_style`.
+2. **Upload registry**: after upload, the n8n workflow's `Record Upload` node calls
+   `POST /youtube/uploaded`, which stores the video in `records/uploads.json` along with
+   its title, style, hook, language, and theme.
+3. **Stats sync**: the `youtube-analytics-sync.json` n8n workflow (daily, 06:30) calls
+   `POST /youtube/sync-stats`, which pulls views/likes/comments from the YouTube Data API v3.
+   Set a Data API key in the environment where the API server runs:
+   `export YOUTUBE_API_KEY=...` before `scripts/start-n8n-api.sh`.
+   Manual alternative: `python -m src.youtube_analytics sync` / `report`.
+4. **Prompt feedback**: once at least `analytics.min_videos_for_feedback` videos are
+   48+ hours old with stats, the SEO prompt receives the top and bottom titles by
+   views/day plus per-style averages, so future titles learn from what actually worked.
+
+The workflows also post an LLM-written engagement question (`youtube_comment` in
+`script.json`) as a comment right after upload via the `Post Engagement Comment` node.
+The same question is appended to the video description. Note: the YouTube API cannot
+pin comments, so pin it manually when you want it at the top. The comment node uses the
+same YouTube OAuth credential as the upload node; select it once in the n8n UI.
 
 ---
 

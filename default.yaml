@@ -96,9 +96,10 @@ llm:
   quality:
     enabled: true          # LLM reviewer validates + revises story and image prompts
     min_score: 6           # accept when score >= this (1-10)
+    min_hook_score: 7      # first sentence is scored on its own; below this the opening is rewritten
     max_revisions: 2       # revise attempts per stage when score is low
     temperature: 0.3       # lower temp for review/revise (generation uses temperature above)
-    
+
   seo:
     enabled: true          # generate YouTube title variants, description, tags for reach/CTR
     title_variants: 5      # how many candidate titles the LLM proposes (best one is chosen)
@@ -107,3 +108,20 @@ llm:
     youtube_title_max_chars: 100  # YouTube upload title hard cap
     max_tags: 15           # number of SEO tags to attach on upload
     temperature: 0.7       # a little creativity for punchy titles
+    title_ab: true         # rotate title styles per run; analytics compares views per style
+    title_styles:          # one title is generated per style; the run's assigned style is published
+      - question
+      - cliffhanger
+      - curiosity
+      - character
+      - emotional
+
+# YouTube performance feedback loop (records/uploads.json).
+# n8n records each upload via POST /youtube/uploaded; a daily n8n workflow calls
+# POST /youtube/sync-stats (needs a Data API v3 key in the YOUTUBE_API_KEY env var).
+# Once enough videos have stats, top/bottom titles are fed back into the SEO prompt.
+analytics:
+  enabled: true
+  min_videos_for_feedback: 4    # feed real data to the LLM only after this many measured videos
+  min_stat_age_hours: 48        # ignore videos younger than this (early stats are noise)
+  feedback_top_n: 3             # top/bottom titles shown to the SEO prompt

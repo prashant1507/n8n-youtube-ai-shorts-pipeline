@@ -28,6 +28,21 @@ VERDICT_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+# Story verdicts also grade the opening sentence on its own: on Shorts the first
+# 2 seconds decide the swipe, so a weak hook fails the review even if the rest scores well.
+STORY_VERDICT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "pass": {"type": "boolean"},
+        "score": {"type": "integer"},
+        "hook_score": {"type": "integer"},
+        "issues": {"type": "array", "items": {"type": "string"}},
+        "summary": {"type": "string"},
+    },
+    "required": ["pass", "score", "hook_score", "issues", "summary"],
+    "additionalProperties": False,
+}
+
 STORY_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {"title": {"type": "string"}, "script": {"type": "string"}},
@@ -147,7 +162,11 @@ def _validate_story_system() -> str:
         "6. Clear beginning, middle, ending — one main arc\n"
         "7. Child-friendly, read-aloud rhythm\n"
         "8. Original — not a famous fairy tale retread\n\n"
-        "Return JSON: pass (bool), score (1-10), issues (string array), summary (one line)."
+        "Additionally grade hook_score (1-10) judging ONLY the first sentence, in isolation:\n"
+        "- 9-10: a direct question, immediate danger, or impossible-sounding claim that grabs instantly\n"
+        "- 7-8: concrete and intriguing, but could hit harder\n"
+        "- <=6: generic, slow, or scene-setting before anything happens\n\n"
+        "Return JSON: pass (bool), score (1-10), hook_score (1-10), issues (string array), summary (one line)."
     )
 
 
@@ -158,7 +177,7 @@ def _validate_story(client: OpenAI, model: str, config: PipelineConfig, title: s
         f"SCRIPT:\n{script}\n\n"
         "Review this script."
     )
-    return _llm_json(client, model, config, _validate_story_system(), user, VERDICT_SCHEMA)
+    return _llm_json(client, model, config, _validate_story_system(), user, STORY_VERDICT_SCHEMA)
 
 
 def _revise_story(
@@ -208,16 +227,27 @@ def refine_story(
     for attempt in range(q.max_revisions + 1):
         verdict = _validate_story(client, model, config, title, script)
         score = int(verdict.get("score", 0))
-        passed = bool(verdict.get("pass")) or score >= q.min_score
+        # Older LLM outputs may omit hook_score; fall back to the overall score.
+        hook_score = int(verdict.get("hook_score", score))
+        hook_ok = hook_score >= q.min_hook_score
+        passed = (bool(verdict.get("pass")) or score >= q.min_score) and hook_ok
         logger.info(
-            "Story quality review: score=%d pass=%s (%s)",
+            "Story quality review: score=%d hook_score=%d pass=%s (%s)",
             score,
+            hook_score,
             passed,
             verdict.get("summary", ""),
         )
         if passed:
             return title, script
         issues = verdict.get("issues") or []
+        if not hook_ok:
+            issues = list(issues) + [
+                f"The first sentence hook scored {hook_score}/10 (need {q.min_hook_score}+). "
+                "Rewrite the opening as a direct question, immediate danger mid-action, "
+                "or an impossible-sounding claim.",
+            ]
+            verdict = {**verdict, "issues": issues}
         logger.warning("Story quality issues: %s", "; ".join(str(i) for i in issues[:5]))
         if attempt >= q.max_revisions:
             logger.warning("Accepting story after %d quality revision(s)", q.max_revisions)
@@ -234,8 +264,9 @@ def _validate_images_system() -> str:
         "Score 1-10. Set pass=true only if score >= 8 with no critical issues.\n\n"
         "Check image_prompts against the story:\n"
         "1. Correct count\n"
-        "2. Chronological story order\n"
-        "3. Scene 1 is a clear establishing shot with full character physical descriptions\n"
+        "2. Scenes 2+ follow chronological story order (scene 1 is exempt: it is the cover)\n"
+        "3. Scene 1 has full character physical descriptions AND shows a dramatic, "
+        "eye-catching cover moment (peak action or wonder, not a calm posed shot)\n"
         "4. Scenes 2+ repeat the EXACT same character anchor text (no names)\n"
         "5. Each scene differs in camera angle, location, or action\n"
         "6. English only, 25-35 words each, no text-in-image requests\n"
