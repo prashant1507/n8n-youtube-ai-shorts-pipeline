@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -60,12 +62,26 @@ PIPELINE_STAGES = (
 )
 
 
+def _script_meta(script: dict) -> dict[str, str]:
+    return {
+        "title": str(script.get("title", "")),
+        "youtube_title": str(script.get("youtube_title", "")),
+        "youtube_description": str(script.get("youtube_description", "")),
+        "youtube_comment": str(script.get("youtube_comment", "")),
+        "hook_text": str(script.get("hook_text", "")),
+        "language": str(script.get("language", "")),
+        "content_type": str(script.get("content_type") or script.get("theme", "")),
+        "title_style": str(script.get("title_style", "")),
+    }
+
+
 def _stage_result(
     stage: str,
     out: Path,
     *,
     skipped: bool = False,
     extra: dict | None = None,
+    slim: bool = False,
 ) -> dict:
     payload: dict = {
         "stage": stage,
@@ -75,7 +91,10 @@ def _stage_result(
     }
     if (out / "script.json").is_file():
         script = load_script(out)
-        payload["script"] = script
+        if slim:
+            payload["script_meta"] = _script_meta(script)
+        else:
+            payload["script"] = script
         payload["lang"] = script.get("language", "")
         payload["theme"] = script.get("content_type") or script.get("theme", "")
     for name in (
@@ -98,6 +117,38 @@ def _stage_result(
     if extra:
         payload.update(extra)
     return payload
+
+
+def _n8n_slim() -> bool:
+    return os.environ.get("N8N_STEP") == "1"
+
+
+def _finish_result(result: dict) -> dict:
+    """Persist full result to disk; return a compact payload for n8n stdout."""
+    out_dir = Path(str(result.get("output_dir", "")))
+    if out_dir.is_dir():
+        (out_dir / ".step_result.json").write_text(
+            json.dumps(result, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    if not _n8n_slim():
+        return result
+
+    slim = dict(result)
+    script = slim.pop("script", None)
+    if isinstance(script, dict):
+        slim["script_meta"] = _script_meta(script)
+        slim.setdefault("lang", script.get("language", ""))
+        slim.setdefault("theme", script.get("content_type") or script.get("theme", ""))
+    return slim
+
+
+def _emit_pipeline_result(result: dict) -> None:
+    payload = _finish_result(result)
+    sys.stdout.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    sys.stdout.flush()
+    os._exit(0)
 
 
 def _default_progress(stage: str, pct: float, msg: str) -> None:
@@ -468,12 +519,7 @@ def main() -> None:
         if not prev or prev == "auto":
             logger.info("Serial theme selected: %s", config.theme)
         result = run_pipeline(config)
-    payload = json.dumps(result, indent=2)
-    sys.stdout.write(payload + "\n")
-    sys.stdout.flush()
-    # Hard-exit: torch/MPS can leave non-daemon threads that hang normal interpreter
-    # shutdown after model use; stdout is already flushed for the n8n JSON consumers.
-    os._exit(0)
+    _emit_pipeline_result(result)
 
 
 if __name__ == "__main__":

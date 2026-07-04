@@ -180,7 +180,23 @@ python -m src.pipeline --theme story --lang en --duration 45 --tier wan
 python -m src.pipeline --video-only --from-run output/YYYYMMDD_HHMMSS_xxx --tier flux
 ```
 
-## n8n automation (YouTube upload, 5× daily)
+### Resume an existing run
+
+Replace `RUN_ID` with your folder name under `output/` (e.g. `20260704_210000_4d1b30`). Skip stages already
+finished (check the run folder for `script.json`, `voice.wav`, `music.wav`, etc.).
+
+```bash
+cd /path/to/n8n-youtube
+source flux-venv/bin/activate
+export TOKENIZERS_PARALLELISM=false
+
+RUN_ID=20260704_210000_4d1b30
+
+for stage in script voice music images clips video subtitles audio_mix final; do
+  echo "$stage"
+  python -m src.pipeline --stage "$stage" --from-run "output/$RUN_ID"
+done
+```
 
 1. Start the API: `./scripts/start-n8n-api.sh` (keep running)
 2. Import `n8n/video-pipeline-youtube.json` into self-hosted n8n

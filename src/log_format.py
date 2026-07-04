@@ -75,8 +75,11 @@ class ColoredFormatter(logging.Formatter):
 
 
 def configure_logging(level: int = logging.INFO, stream=None) -> None:
-    """Attach a colored formatter to the root logger."""
-    stream = stream or sys.stdout
+    """Attach a colored formatter to the root logger (stderr by default).
+
+    Pipeline subprocesses print JSON to stdout for n8n; logs must not use stdout.
+    """
+    stream = sys.stderr if stream is None else stream
     root = logging.getLogger()
     root.handlers.clear()
     handler = logging.StreamHandler(stream)

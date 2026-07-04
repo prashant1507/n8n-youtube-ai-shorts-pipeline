@@ -58,19 +58,153 @@ def _enrich_result(result: dict[str, Any], handler: BaseHTTPRequestHandler | Non
     return result
 
 
+def _extract_json_from(text: str, start: int) -> str | None:
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
+    return None
+
+
+def _extract_json_object(text: str) -> dict[str, Any] | None:
+    """Return the best complete JSON object in text (prefer payloads with run_id)."""
+    best: dict[str, Any] | None = None
+    best_raw: str | None = None
+    start = 0
+    while True:
+        start = text.find("{", start)
+        if start < 0:
+            break
+        raw = _extract_json_from(text, start)
+        start += 1
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(data, dict):
+            continue
+        if data.get("run_id"):
+            return data
+        if best is None or len(raw) > len(best_raw or ""):
+            best = data
+            best_raw = raw
+    return best if best and best.get("run_id") else None
+
+
+def _recover_step_result(stdout: str, stderr: str) -> dict[str, Any] | None:
+    """Load step result from disk when stdout JSON is missing or truncated."""
+    import re
+
+    haystack = f"{stdout}\n{stderr}"
+    run_id = ""
+    match = re.search(r'"run_id"\s*:\s*"([^"]+)"', haystack)
+    if match:
+        run_id = match.group(1).strip()
+
+    candidates: list[Path] = []
+    if run_id:
+        candidates.append(OUTPUT_DIR / run_id / ".step_result.json")
+        candidates.append(OUTPUT_DIR / run_id / "script.json")
+
+    for path in sorted(OUTPUT_DIR.glob("*/.step_result.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:5]:
+        candidates.append(path)
+
+    seen: set[Path] = set()
+    for path in candidates:
+        if path in seen or not path.is_file():
+            continue
+        seen.add(path)
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if path.name == "script.json":
+            run_dir = path.parent
+            return {
+                "stage": "script",
+                "run_id": run_dir.name,
+                "output_dir": str(run_dir),
+                "skipped": False,
+                "script_meta": {
+                    "title": str(data.get("title", "")),
+                    "youtube_title": str(data.get("youtube_title", "")),
+                    "youtube_description": str(data.get("youtube_description", "")),
+                    "youtube_comment": str(data.get("youtube_comment", "")),
+                    "hook_text": str(data.get("hook_text", "")),
+                    "language": str(data.get("language", "")),
+                    "content_type": str(data.get("content_type") or data.get("theme", "")),
+                    "title_style": str(data.get("title_style", "")),
+                },
+                "lang": data.get("language", ""),
+                "theme": data.get("content_type") or data.get("theme", ""),
+                "recovered": True,
+            }
+        if isinstance(data, dict) and data.get("run_id"):
+            data["recovered"] = True
+            return data
+    return None
+
+
 def _parse_json_stdout(proc: subprocess.CompletedProcess[str]) -> dict[str, Any]:
     stdout = (proc.stdout or "").strip()
     stderr = (proc.stderr or "").strip()
-    if stdout.startswith("{"):
+    for chunk in _json_chunks(stdout):
         try:
-            return json.loads(stdout)
+            data = json.loads(chunk)
+            if isinstance(data, dict) and data.get("run_id"):
+                return data
         except json.JSONDecodeError:
-            pass
+            continue
+    extracted = _extract_json_object(stdout)
+    if extracted is not None:
+        return extracted
+    recovered = _recover_step_result(stdout, stderr)
+    if recovered is not None:
+        logger.warning(
+            "Recovered pipeline result from disk for run_id=%s",
+            recovered.get("run_id", ""),
+        )
+        return recovered
     if proc.returncode != 0:
         raise RuntimeError(
             f"Pipeline failed (exit {proc.returncode}): {(stderr or stdout)[-2000:]}"
         )
-    raise RuntimeError(f"Pipeline did not return JSON: {stdout[-2000:]}")
+    raise RuntimeError(
+        f"Pipeline did not return JSON (stdout {len(stdout)} bytes): {stdout[-2000:]}"
+    )
+
+
+def _json_chunks(text: str):
+    """Yield likely JSON payloads from stdout (logs may precede the final object)."""
+    text = text.strip()
+    if not text:
+        return
+    yield text
+    last_line_break = text.rfind("\n{")
+    if last_line_break >= 0:
+        yield text[last_line_break + 1 :]
+    first_brace = text.find("{")
+    if first_brace > 0:
+        yield text[first_brace:]
 
 
 def _run_subprocess_with_retry(cmd: list[str], label: str) -> dict[str, Any]:
@@ -266,7 +400,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    configure_logging(level=logging.INFO, stream=sys.stdout)
+    configure_logging(level=logging.INFO)
     if not SCRIPT.is_file():
         raise SystemExit(f"Missing script: {SCRIPT}")
     if not STEP_SCRIPT.is_file():

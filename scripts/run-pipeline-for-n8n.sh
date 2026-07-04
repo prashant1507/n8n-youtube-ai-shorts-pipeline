@@ -17,6 +17,7 @@ if [[ "$LANG" != "en" && "$LANG" != "hi" ]]; then
 fi
 
 export TOKENIZERS_PARALLELISM=false
+export N8N_STEP=1
 PYTHON="$ROOT/flux-venv/bin/python"
 if [[ ! -x "$PYTHON" ]]; then
   echo '{"error": "flux-venv not found — run: python3.12 -m venv flux-venv && pip install -r requirements.txt"}' >&2
