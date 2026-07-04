@@ -63,7 +63,8 @@ voice:
 
 music:
   model: "facebook/musicgen-small"
-  prompt: "Soft ambient music, gentle and calm, no vocals, bedtime story atmosphere"
+  # Last-resort fallback only; per-theme music lives in profiles/*.yaml (music:).
+  prompt: "Soft ambient background music matching the video mood, gentle, no vocals"
   volume: 0.16
 
 video:

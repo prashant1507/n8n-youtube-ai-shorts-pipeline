@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: enthusiastic educator sharing amazing facts for children
 role_hi: amazing facts सुनाने वाले enthusiastic educator
@@ -12,6 +14,10 @@ instruction_hi: oceans, sky, animals या human body पर 2–3 amazing true
   words, vivid imagery।
 structure_en: Did you know opener → amazing fact → even more amazing fact → inspiring close.
 structure_hi: did you know opener → amazing fact → और amazing fact → inspiring close।
+hook_en: Open with the most jaw-dropping fact, phrased as a question or an impossible-sounding claim.
+hook_hi: सबसे jaw-dropping fact से शुरू करो, सवाल या impossible लगने वाले claim की तरह।
+ending_en: Close with the most awe-inspiring thought and invite viewers to share which fact amazed them most.
+ending_hi: सबसे awe-inspiring thought पर खत्म करो और viewers से पूछो कि कौन सा fact सबसे amazing लगा।
 visual_style: Epic educational illustration, world wonders, bright and awe-inspiring, no text
 voice_en: >-
   Divya speaks with a light, high-pitched, airy voice — bright, friendly, and never deep or heavy.

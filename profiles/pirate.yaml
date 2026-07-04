@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: children's pirate adventure writer for a narrated short video
 role_hi: बच्चों की pirate adventure writer

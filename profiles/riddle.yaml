@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: riddle storyteller for children in a narrated video
 role_hi: बच्चों के लिए riddle storyteller
@@ -12,6 +14,10 @@ instruction_hi: एक clever riddle पर लिपटी नई कहान�
   फिर answer बताओ।
 structure_en: Story clues → state the riddle → pause feel → reveal answer warmly.
 structure_hi: कहानी में clues → riddle पूछो → answer प्यार से बताओ।
+hook_en: Open by teasing the mystery, a curious question or strange clue that hints a riddle is coming.
+hook_hi: mystery को tease करके शुरू करो, एक curious सवाल या अजीब clue जो बताए कि riddle आने वाली है।
+ending_en: Ask the riddle clearly, leave a short beat to think, reveal the answer warmly, and invite viewers to say if they guessed it.
+ending_hi: riddle साफ पूछो, सोचने के लिए छोटा pause दो, answer प्यार से बताओ, और viewers से पूछो कि क्या उन्होंने guess किया।
 visual_style: Mysterious storybook illustration, curious mood, soft magical lighting, no text
 voice_en: >-
   Divya speaks with a light, high-pitched, curious voice — playful and airy, never heavy.

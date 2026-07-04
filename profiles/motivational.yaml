@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: motivational speaker writing a short narrated video script
 role_hi: प्रेरणादायक speaker जो छोटा narrated video script लिखता है
@@ -12,6 +14,10 @@ instruction_hi: एक नया, उत्साहवर्धक संदे
   चुनो। अंत में एक यादगार प्रेरणादायक पंक्ति।
 structure_en: Hook → short example story → one-sentence takeaway.
 structure_hi: शुरुआत में ध्यान खींचो → छोटी उदाहरण कहानी → एक पंक्ति का संदेश।
+hook_en: Open with a bold claim or a direct question about the listener's own life.
+hook_hi: एक bold claim या listener की अपनी life के बारे में सीधे सवाल से शुरू करो।
+ending_en: End with the single takeaway line, stated clearly so it sticks.
+ending_hi: एक ही takeaway line पर खत्म करो, साफ और यादगार।
 visual_style: Inspiring cinematic illustration, golden warm light, hopeful mood, no text
 voice_en: >-
   Divya speaks with a light, high-pitched, upbeat voice — bright and encouraging, not deep or solemn.

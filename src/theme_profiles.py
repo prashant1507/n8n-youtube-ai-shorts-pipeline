@@ -120,16 +120,31 @@ def default_theme_profile(theme: str) -> dict[str, str]:
         "role_hi": "creative short-form video scriptwriter",
         "instruction_en": (
             f"Invent completely NEW original content in the style/genre: '{label}'. "
-            "Choose characters, setting, and plot. Clear beginning and satisfying ending."
+            "Choose the subject, characters (if any), and shape yourself. "
+            "Clear beginning and satisfying ending that fit the genre."
         ),
         "instruction_hi": (
             f"'{label}' शैली में बिल्कुल नई original content लिखो। "
-            "पात्र, setting और plot तुम खुद चुनो।"
+            "विषय, पात्र (अगर हों) और रूप तुम खुद चुनो।"
         ),
         "structure_en": "Clear beginning, middle, and ending matched to the genre.",
         "structure_hi": "शैली के अनुसार साफ शुरुआत, बीच और अंत।",
         "visual_style": "Colorful storybook illustration, expressive, high detail, no text",
-        "music": "Soft background music matching the mood, no vocals",
+        "music": f"Soft background music matching a {label} mood, no vocals",
+        "voice_en": (
+            f"Divya speaks with a light, clear, expressive voice matching a {label} mood, "
+            "bright and friendly, never deep or heavy. "
+            "Natural flowing pace with short pauses. "
+            "Very clear audio, close recording, no background noise. "
+            "RULE: Full text should be in audio."
+        ),
+        "voice_hi": (
+            f"Rani speaks in clear, natural Hindi with a light, expressive tone matching a {label} mood, "
+            "bright and friendly, never deep or heavy. "
+            "Natural flowing pace with short pauses. "
+            "Very clear audio, close recording, no background noise. "
+            "RULE: Full text should be in audio."
+        ),
     }
 
 

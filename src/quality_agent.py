@@ -134,14 +134,23 @@ def _story_context(config: PipelineConfig) -> str:
     structure = profile.get("structure_hi" if lang == "hindi" else "structure_en", "")
     avoid_names = recent_protagonist_names(lang, limit=12)
     avoid_titles = recent_titles(theme_key(config.theme), lang, limit=8)
+    audience = profile.get("audience", "young children and families")
+    tone = profile.get("tone", config.tone)
     lines = [
         f"Content type: {theme_key(config.theme)}",
         f"Language: {lang}",
         f"Target length: {lo}-{hi} words (~{config.duration_sec}s narration)",
-        f"Tone: {config.tone}",
+        f"Tone: {tone}",
+        f"Audience: {audience}",
         f"Theme instruction: {instruction}",
         f"Structure: {structure}",
     ]
+    hook = profile.get("hook_hi" if lang == "hindi" else "hook_en") or profile.get("hook_en")
+    if hook:
+        lines.append(f"Hook guidance for this content type: {hook}")
+    ending = profile.get("ending_hi" if lang == "hindi" else "ending_en") or profile.get("ending_en")
+    if ending:
+        lines.append(f"Ending guidance for this content type: {ending}")
     if avoid_names:
         lines.append(f"Banned protagonist names (already used): {', '.join(avoid_names)}")
     if avoid_titles:
@@ -151,19 +160,23 @@ def _story_context(config: PipelineConfig) -> str:
 
 def _validate_story_system() -> str:
     return (
-        "You are a strict quality reviewer for children's narrated YouTube Shorts scripts.\n"
+        "You are a strict quality reviewer for narrated YouTube Shorts scripts.\n"
+        "Judge the script ONLY against the provided content type, theme instruction, and structure.\n"
+        "A joke needs setup and punchline, a riddle needs clues and a reveal, facts need accuracy and awe, "
+        "a story needs one arc. Do NOT demand story elements from non-story content types.\n"
         "Score 1-10 and list concrete issues. Set pass=true only if score >= 8 with no critical issues.\n\n"
         "Check:\n"
-        "1. Fits the content type and theme instruction\n"
+        "1. Fits the content type, theme instruction, and audience\n"
         "2. Strong hook in the first 1-2 sentences (not generic 'In a village' / 'Once upon a time')\n"
         "3. TTS-ready: no markdown, emojis, stage directions, speaker labels\n"
         "4. Word count within target range\n"
-        "5. Fresh protagonist name (not in banned list)\n"
-        "6. Clear beginning, middle, ending — one main arc\n"
-        "7. Child-friendly, read-aloud rhythm\n"
-        "8. Original — not a famous fairy tale retread\n\n"
+        "5. If the script has named characters: fresh names (not in the banned list)\n"
+        "6. Follows the structure given for this content type\n"
+        "7. Audience-appropriate, read-aloud rhythm\n"
+        "8. Original, not a retelling of famous existing material\n\n"
         "Additionally grade hook_score (1-10) judging ONLY the first sentence, in isolation:\n"
-        "- 9-10: a direct question, immediate danger, or impossible-sounding claim that grabs instantly\n"
+        "- 9-10: grabs instantly in a way that fits the content type (a demanding question, danger "
+        "mid-action, an impossible-sounding claim or fact, or a setup that promises a laugh or mystery)\n"
         "- 7-8: concrete and intriguing, but could hit harder\n"
         "- <=6: generic, slow, or scene-setting before anything happens\n\n"
         "Return JSON: pass (bool), score (1-10), hook_score (1-10), issues (string array), summary (one line)."

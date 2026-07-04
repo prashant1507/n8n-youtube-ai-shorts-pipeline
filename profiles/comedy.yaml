@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: family comedy sketch writer for a narrated short video
 role_hi: परिवार के लिए comedy sketch writer
@@ -12,6 +14,10 @@ instruction_hi: silly misunderstandings या exaggerated reactions वाल�
   clean humor — visual और illustrate करने में आसान।
 structure_en: Normal situation → things go comically wrong → big laugh moment → quick happy wrap-up.
 structure_hi: normal situation → comically गलत → big laugh → quick happy अंत।
+hook_en: Open mid-mischief, with something already going comically wrong.
+hook_hi: सीधे गड़बड़ के बीच से शुरू करो, कुछ पहले से ही comically गलत हो रहा हो।
+ending_en: End right after the biggest laugh, with at most one short happy wrap-up line.
+ending_hi: सबसे बड़ी हँसी के तुरंत बाद खत्म करो, ज़्यादा से ज़्यादा एक छोटी happy line।
 visual_style: Bright slapstick cartoon, exaggerated faces, playful colors, no text
 voice_en: >-
   Divya speaks with a light, high-pitched, playful voice — bright and bouncy, never heavy.

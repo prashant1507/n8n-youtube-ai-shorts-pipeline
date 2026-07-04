@@ -10,3 +10,4 @@ records
 models
 .idea
 profiles/*god*.yaml
+.claude

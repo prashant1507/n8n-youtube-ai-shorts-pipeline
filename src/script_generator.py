@@ -147,9 +147,10 @@ def _protagonist_name_rules(config: PipelineConfig) -> str:
     avoid = recent_protagonist_names(lang, limit=12)
     if lang == "hindi":
         lines = [
-            "### PROTAGONIST NAME ###",
-            "Give the main character a new name you invent for this story only.",
-            "Do not reuse protagonist names from past videos in this series.",
+            "### CHARACTER NAMES (only if this content type uses named characters) ###",
+            "Not every content type needs a named character (facts, riddles, quotes may not).",
+            "IF your script features a named main character, invent a new name for this script only.",
+            "Do not reuse character names from past videos in this series.",
             "Avoid overused defaults (Luna, Mia, Max, Leo, Emma, Noah, etc.).",
         ]
         if avoid:
@@ -157,14 +158,51 @@ def _protagonist_name_rules(config: PipelineConfig) -> str:
         return "\n".join(lines)
 
     lines = [
-        "### PROTAGONIST NAME ###",
-        "Give the main protagonist a fresh, distinctive name invented for this story only.",
-        "Use a unique protagonist name each time — never reuse names from past videos.",
+        "### CHARACTER NAMES (only if this content type uses named characters) ###",
+        "Not every content type needs a named character (facts, riddles, quotes may not).",
+        "IF your script features a named main character, give them a fresh, distinctive name "
+        "invented for this script only — never reuse names from past videos.",
         "Avoid overused kid-story defaults (Luna, Mia, Max, Leo, Emma, Noah, etc.).",
     ]
     if avoid:
         lines.append(f"Do NOT reuse these protagonist names from past videos: {', '.join(avoid)}")
     return "\n".join(lines)
+
+
+def _profile_text(profile: dict[str, str], key: str, lang: str) -> str:
+    """Language-specific profile value with English fallback (e.g. hook_hi -> hook_en)."""
+    if lang == "hindi":
+        return profile.get(f"{key}_hi") or profile.get(f"{key}_en") or ""
+    return profile.get(f"{key}_en") or ""
+
+
+def _hook_block(profile: dict[str, str], lang: str) -> str:
+    theme_hook = _profile_text(profile, "hook", lang)
+    theme_line = f"For THIS content type: {theme_hook}\n" if theme_hook else ""
+    return (
+        "### HOOK: THE FIRST SENTENCE DECIDES EVERYTHING (YouTube Shorts) ###\n"
+        "Viewers decide to swipe away within 2 seconds. The FIRST sentence must instantly grab, "
+        "using whichever fits this content type best:\n"
+        "- A direct question that demands an answer ('Do you know why the moon followed Kiaan home?')\n"
+        "- Immediate danger, trouble, or tension mid-action ('The bridge started cracking under Miro's feet.')\n"
+        "- A claim or fact that sounds impossible ('Yesterday, a snail won the city marathon.')\n"
+        "- A setup that promises a laugh, mystery, or payoff within seconds\n"
+        f"{theme_line}"
+        "Start mid-action or mid-thought, with zero slow scene-setting before the hook.\n"
+        "The SECOND sentence must deepen the hook and hint at the payoff, without revealing it.\n"
+        "- BANNED generic openings: 'Once upon a time', 'In a village', 'There was a', 'Long ago', "
+        "'One day' as the very first words.\n"
+        "- Keep the hook concrete and easy to say aloud, with no meta narration like 'In this story' "
+        "or 'Let me tell you'.\n"
+    )
+
+
+def _ending_block(profile: dict[str, str], lang: str) -> str:
+    ending = _profile_text(profile, "ending", lang) or (
+        "End on a satisfying note whose mood or image echoes the opening, "
+        "so the short feels good to replay."
+    )
+    return "### ENDING: LOOP-FRIENDLY ###\n" + ending + "\n"
 
 
 def _story_system_prompt(config: PipelineConfig) -> str:
@@ -174,14 +212,16 @@ def _story_system_prompt(config: PipelineConfig) -> str:
     role = profile["role_hi"] if lang == "hindi" else profile["role_en"]
     content_type = theme_key(config.theme)
     structure = profile.get("structure_hi" if lang == "hindi" else "structure_en", "")
+    audience = profile.get("audience", "young children and families")
+    tone = profile.get("tone", config.tone)
 
     lang_rules = (
         "5. Write ALL of 'title' and 'script' in Hindi using Devanagari script.\n"
-        "6. Use simple spoken Hindi suitable for children — natural sentences, not Hinglish.\n"
+        f"6. Use simple spoken Hindi that suits {audience}: natural sentences, not Hinglish.\n"
         "7. Avoid English words unless commonly used in Hindi speech."
         if lang == "hindi"
         else "5. Write ALL of 'title' and 'script' in English.\n"
-        "6. Use simple, warm, child-friendly vocabulary."
+        f"6. Use simple, vivid vocabulary that suits {audience}."
     )
 
     task_key = "task_hi" if lang == "hindi" else "task_en"
@@ -194,22 +234,11 @@ def _story_system_prompt(config: PipelineConfig) -> str:
 
     return (
         f"You are a {role}.\n"
-        f"Content type: {content_type}. Tone: {config.tone}.\n\n"
+        f"Content type: {content_type}. Tone: {tone}. Audience: {audience}.\n\n"
         "### YOUR TASK ###\n"
         f"{task_block}\n\n"
-        "### HOOK: THE FIRST SENTENCE DECIDES EVERYTHING (YouTube Shorts) ###\n"
-        "Viewers decide to swipe away within 2 seconds. The FIRST sentence must be exactly one of:\n"
-        "- A direct question that demands an answer ('Do you know why the moon followed Kiaan home?')\n"
-        "- Immediate danger or trouble, mid-action ('The bridge started cracking under Miro's feet.')\n"
-        "- A claim that sounds impossible ('Yesterday, a snail won the city marathon.')\n"
-        "Start mid-action, with zero scene-setting before the hook.\n"
-        "The SECOND sentence must deepen the hook and hint at the payoff, without revealing the ending.\n"
-        "- BANNED generic openings: 'Once upon a time', 'In a village', 'There was a', 'Long ago', "
-        "'One day' as the very first words.\n"
-        "- Keep the hook concrete and easy to say aloud, with no meta narration like 'In this story' "
-        "or 'Let me tell you'.\n\n"
-        "### ENDING — LOOP-FRIENDLY ###\n"
-        "End on a warm, satisfying note whose mood or image echoes the opening, so the short feels good to replay.\n\n"
+        f"{_hook_block(profile, lang)}\n"
+        f"{_ending_block(profile, lang)}\n"
         f"### NARRATION RULES (critical for TTS) ###\n"
         "1. Write for the ear, not the page — short sentences, gentle rhythm.\n"
         "2. Use simple punctuation only: periods, commas, question marks. No emojis, bullets, or stage directions.\n"
@@ -431,8 +460,28 @@ def _build_scenes(script_text: str, image_prompts: list[str], duration_sec: int)
     return scenes
 
 
+def _build_music_prompt(base: str) -> str:
+    """Compose the MusicGen prompt: theme mood plus narration-bed qualities.
+
+    The theme profile supplies genre/mood/instruments; this adds the qualities every
+    background bed needs so no profile has to repeat them (and none can forget them).
+    """
+    base = re.sub(r"\s+", " ", (base or "").strip()).rstrip(".,;")
+    if not base:
+        base = "Soft ambient background music"
+    parts = [
+        base,
+        "instrumental background bed for a narrated video",
+        "steady gentle tempo, consistent volume",
+    ]
+    if "no vocals" not in base.lower():
+        parts.append("no vocals")
+    return ", ".join(parts)
+
+
 def _default_music_prompt(config: PipelineConfig) -> str:
-    return _theme_profile(config)["music"]
+    base = _theme_profile(config).get("music") or config.music.prompt
+    return _build_music_prompt(base)
 
 
 def _default_voice_description(config: PipelineConfig) -> str:

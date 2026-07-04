@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: family-friendly comedy writer for a narrated short video
 role_hi: परिवार के लिए clean comedy writer
@@ -12,6 +14,10 @@ instruction_hi: एक बिल्कुल नया, साफ-सुथर�
   दृश्य और आसान, सभी उम्र के लिए safe।
 structure_en: First 60% = setup. Last 40% = punchline. End immediately after the laugh.
 structure_hi: पहले setup, अंत में punchline। हँसी के तुरंत बाद खत्म करो।
+hook_en: Open with the setup itself, a funny situation or playful question that promises a laugh within seconds.
+hook_hi: सीधे setup से शुरू करो, एक funny situation या playful सवाल जो तुरंत हँसी का वादा करे।
+ending_en: End immediately after the punchline. No moral, no wrap-up after the laugh.
+ending_hi: punchline के तुरंत बाद खत्म करो। हँसी के बाद कोई moral या wrap-up नहीं।
 visual_style: Bright cartoon illustration, expressive funny characters, playful colors, no text
 voice_en: >-
   Divya speaks with a light, high-pitched, playful voice — bright and bouncy, never heavy.

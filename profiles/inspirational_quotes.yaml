@@ -3,6 +3,8 @@
 # Required: role_*, instruction_*, structure_*, visual_style, music
 # Optional: task_en, task_hi (override default "no retelling" LLM rules)
 # Optional: voice_en, voice_hi (Parler-TTS delivery for this theme)
+# Optional: hook_en/hi, ending_en/hi (theme-specific opening/closing guidance)
+# Optional: audience, tone (override the kid-story defaults)
 
 role_en: inspirational narrator writing short quote-based videos for children
 role_hi: बच्चों के लिए inspirational quote narrator
@@ -12,6 +14,10 @@ instruction_hi: बच्चों के लिए ONE original inspirational q
   clear करो। अंत में quote clearly repeat करो।
 structure_en: Hook question → mini story or metaphor → state the quote → one-line encouragement.
 structure_hi: hook question → mini story या metaphor → quote → one-line encouragement।
+hook_en: Open with a question or bold claim that the quote will answer.
+hook_hi: एक सवाल या bold claim से शुरू करो जिसका answer quote देगी।
+ending_en: End by repeating the quote slowly and clearly, then one short line of encouragement.
+ending_hi: quote को धीरे और साफ repeat करके खत्म करो, फिर एक छोटी encouragement line।
 visual_style: Inspiring sunrise illustration, child looking hopeful, golden light, no text
 voice_en: >-
   Divya speaks with a light, high-pitched, upbeat voice — bright and encouraging, not deep or solemn.
