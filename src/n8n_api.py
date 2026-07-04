@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
+from .log_format import configure_logging
 from .run_io import OUTPUT_DIR
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -265,11 +266,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-        stream=sys.stdout,
-    )
+    configure_logging(level=logging.INFO, stream=sys.stdout)
     if not SCRIPT.is_file():
         raise SystemExit(f"Missing script: {SCRIPT}")
     if not STEP_SCRIPT.is_file():

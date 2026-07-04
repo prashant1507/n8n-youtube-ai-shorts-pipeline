@@ -182,7 +182,9 @@ def generate_from_spec(spec: dict, output_dir: Path) -> list[Path]:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from .log_format import configure_logging
+
+    configure_logging(level=logging.INFO)
     parser = argparse.ArgumentParser(description="FLUX.2 Klein image generation")
     parser.add_argument("--prompts-json", required=True)
     parser.add_argument("--output-dir", required=True)

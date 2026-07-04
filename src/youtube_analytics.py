@@ -845,7 +845,9 @@ def seo_feedback_lines(
 def main() -> None:
     import sys
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from .log_format import configure_logging
+
+    configure_logging(level=logging.INFO)
     cmd = sys.argv[1] if len(sys.argv) > 1 else "report"
     if cmd == "sync":
         result = sync_stats()

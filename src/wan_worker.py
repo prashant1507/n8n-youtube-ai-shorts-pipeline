@@ -7,6 +7,7 @@ import json
 import logging
 from pathlib import Path
 
+from .log_format import configure_logging
 from .run_io import prepare_worker_job
 from .video_wan import generate_clip, generate_wan_video
 
@@ -34,7 +35,7 @@ def run_wan_job(
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    configure_logging(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Wan2.2 clip generation (isolated subprocess)")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--config", default=None)

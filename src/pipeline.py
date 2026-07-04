@@ -37,6 +37,7 @@ from .run_io import (
     save_script,
     sync_config_from_script,
 )
+from .log_format import configure_logging
 from .script_generator import generate_script
 from .story_registry import register_story
 from .theme_profiles import resolve_voice_from_script
@@ -387,7 +388,7 @@ def main() -> None:
     import os
     import sys
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    configure_logging(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
         description="Narration video pipeline — pass --theme, --lang, --duration, --tier"
